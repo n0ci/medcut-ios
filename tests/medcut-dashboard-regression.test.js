@@ -188,6 +188,24 @@ test('graph controls are below chart and forms are collapsed by default', () => 
     /<details id="entry-schedule" class="entry-card">/,
     'Expected schedule form to be collapsed details panel by default.'
   );
+
+  assert.match(
+    source,
+    /id="window-1" class="pill" onclick="setWindow\(1\)"/,
+    'Expected 1d graph window control.'
+  );
+
+  assert.match(
+    source,
+    /id="window-7" class="pill" onclick="setWindow\(7\)"/,
+    'Expected 7d graph window control.'
+  );
+
+  assert.match(
+    source,
+    /id="custom-days" type="number"/,
+    'Expected custom day window numeric control.'
+  );
 });
 
 test('history pagination load-more wiring exists', () => {
@@ -207,5 +225,37 @@ test('history pagination load-more wiring exists', () => {
     source,
     /function loadMoreHistory\(\)/,
     'Expected pagination handler function for history view.'
+  );
+});
+
+test('graph supports custom day window and pinch interaction', () => {
+  assert.match(
+    source,
+    /function applyCustomDays\(\)/,
+    'Expected custom day apply handler for graph window.'
+  );
+
+  assert.match(
+    source,
+    /state\.pinchStartDistance = Math\.hypot\(/,
+    'Expected two-finger pinch distance tracking.'
+  );
+
+  assert.match(
+    source,
+    /state\.days = proposed;\s*draw\(false\);/,
+    'Expected pinch interaction to update graph day window and redraw.'
+  );
+
+  assert.match(
+    source,
+    /id="custom-days" type="number" min="1" max="365" step="1" inputmode="numeric"/,
+    'Expected integer-focused custom day input configuration.'
+  );
+
+  assert.match(
+    source,
+    /if \(custom\) custom\.value = String\(state\.days\);/,
+    'Expected custom day input to stay synchronized with pinch/window state.'
   );
 });

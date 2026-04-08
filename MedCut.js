@@ -1026,12 +1026,18 @@ function buildDashboardPayload(data, rows) {
         }
       }),
     datasets: {
+      amount_1: buildSeries(data, defaults, 1, 1, "amount"),
+      amount_7: buildSeries(data, defaults, 7, 7, "amount"),
       amount_30: buildSeries(data, defaults, 30, 30, "amount"),
       amount_90: buildSeries(data, defaults, 90, 90, "amount"),
       amount_180: buildSeries(data, defaults, 180, 180, "amount"),
+      amount_365: buildSeries(data, defaults, 365, 365, "amount"),
+      concentration_1: buildSeries(data, defaults, 1, 1, "concentration"),
+      concentration_7: buildSeries(data, defaults, 7, 7, "concentration"),
       concentration_30: buildSeries(data, defaults, 30, 30, "concentration"),
       concentration_90: buildSeries(data, defaults, 90, 90, "concentration"),
-      concentration_180: buildSeries(data, defaults, 180, 180, "concentration")
+      concentration_180: buildSeries(data, defaults, 180, 180, "concentration"),
+      concentration_365: buildSeries(data, defaults, 365, 365, "concentration")
     }
   }
 }
@@ -1430,9 +1436,12 @@ function renderDashboardHTML(appName, payloadJson) {
   </div>
 
   <div class="toolbar">
+    <button id="window-1" class="pill" onclick="setWindow(1)">1d</button>
+    <button id="window-7" class="pill" onclick="setWindow(7)">7d</button>
     <button id="window-30" class="pill" onclick="setWindow(30)">30d</button>
     <button id="window-90" class="pill" onclick="setWindow(90)">90d</button>
-    <button id="window-180" class="pill" onclick="setWindow(180)">180d</button>
+    <input id="custom-days" type="number" min="1" max="365" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="Custom days" style="width:120px" />
+    <button class="pill" type="button" onclick="applyCustomDays()">Apply</button>
     <button id="mode-amount" class="pill" onclick="setMode('amount')">Amount</button>
     <button id="mode-concentration" class="pill" onclick="setMode('concentration')">Concentration</button>
   </div>
@@ -1536,7 +1545,7 @@ function renderDashboardHTML(appName, payloadJson) {
   document.getElementById('schema').textContent = payload.schema_version;
 
   let state = {
-    days: 30,
+    days: 7,
     mode: 'amount',
     routeFilter: 'all',
     qualityFilter: 'all',
@@ -1547,8 +1556,10 @@ function renderDashboardHTML(appName, payloadJson) {
     showMarkers: true,
     showTotal: false,
     showTrend: false,
-    enabled: payload.datasets.amount_30.compounds.map(c => c.name),
-    hoverX: null
+    enabled: payload.datasets.amount_7.compounds.map(c => c.name),
+    hoverX: null,
+    pinchStartDistance: null,
+    pinchStartDays: null
   };
   const HISTORY_PAGE_SIZE = 15;
 
@@ -1607,6 +1618,14 @@ function renderDashboardHTML(appName, payloadJson) {
   fillCompoundSelect('log-compound');
   fillCompoundSelect('schedule-compound');
   setDefaultDateTimeInputs();
+
+  const customDaysInput = document.getElementById('custom-days');
+  if (customDaysInput) {
+    customDaysInput.addEventListener('change', function() {
+      const clamped = clampDays(customDaysInput.value);
+      customDaysInput.value = clamped ? String(clamped) : String(state.days);
+    });
+  }
 
   function hasRows() {
     return Array.isArray(payload.rows) && payload.rows.length > 0;
@@ -1673,11 +1692,55 @@ function renderDashboardHTML(appName, payloadJson) {
     return diff >= 0 ? ('in ' + days + 'd') : (days + 'd ago');
   }
 
-  function getSeries() {
-    return payload.datasets[state.mode + '_' + state.days];
+  function clampDays(value) {
+    const days = Math.round(Number(value));
+    if (!Number.isFinite(days)) return null;
+    return Math.max(1, Math.min(365, days));
   }
 
-  function setWindow(days) { state.days = days; draw(false); }
+  function getSeries() {
+    const direct = payload.datasets[state.mode + '_' + state.days];
+    if (direct) return direct;
+
+    const base = payload.datasets[state.mode + '_365'] || payload.datasets[state.mode + '_180'];
+    if (!base) return payload.datasets[state.mode + '_90'];
+
+    const now = new Date(base.now).getTime();
+    const startBound = now - state.days * 86400000;
+    const endBound = now + state.days * 86400000;
+
+    return {
+      mode: base.mode,
+      start: new Date(startBound).toISOString(),
+      end: new Date(endBound).toISOString(),
+      now: base.now,
+      compounds: base.compounds.map(function(c) {
+        return {
+          name: c.name,
+          display_name: c.display_name,
+          color: c.color,
+          model_quality: c.model_quality,
+          route: c.route,
+          category: c.category,
+          points: c.points.filter(function(p) {
+            const t = new Date(p[0]).getTime();
+            return t >= startBound && t <= endBound;
+          }),
+          markers: (c.markers || []).filter(function(m) {
+            const t = new Date(m[0]).getTime();
+            return t >= startBound && t <= endBound;
+          })
+        };
+      })
+    };
+  }
+
+  function setWindow(days) {
+    const clamped = clampDays(days);
+    if (!clamped) return;
+    state.days = clamped;
+    draw(false);
+  }
   function setMode(mode) { state.mode = mode; draw(false); }
   function setRouteFilter(route) { state.routeFilter = route; resetHistoryPagination(); draw(false); }
   function setQualityFilter(quality) { state.qualityFilter = quality; resetHistoryPagination(); draw(false); }
@@ -1721,8 +1784,20 @@ function renderDashboardHTML(appName, payloadJson) {
     updateActiveControls();
   }
 
+  function applyCustomDays() {
+    const input = document.getElementById('custom-days');
+    const clamped = clampDays(input && input.value);
+    if (!clamped) {
+      if (input) input.value = String(state.days);
+      return;
+    }
+    state.days = clamped;
+    if (input) input.value = String(clamped);
+    draw(false);
+  }
+
   function updateActiveControls() {
-    ['30', '90', '180'].forEach(function(days) {
+    ['1', '7', '30', '90'].forEach(function(days) {
       const el = document.getElementById('window-' + days);
       if (!el) return;
       el.classList.toggle('active', state.days === Number(days));
@@ -1742,6 +1817,9 @@ function renderDashboardHTML(appName, payloadJson) {
 
     const detail = document.getElementById('chartDetail');
     if (detail && detail.value !== state.chartDetail) detail.value = state.chartDetail;
+
+    const custom = document.getElementById('custom-days');
+    if (custom) custom.value = String(state.days);
   }
 
   function focusEntry(kind) {
@@ -2036,7 +2114,7 @@ function renderDashboardHTML(appName, payloadJson) {
 
       const val = (yMax * (1 - i / 4)).toFixed(state.mode === 'concentration' ? 2 : 1);
       ctx.fillStyle = '#9fb1cc';
-      ctx.font = '22px -apple-system';
+      ctx.font = '12px -apple-system';
       ctx.fillText(val, 10, y + 7);
     }
 
@@ -2050,7 +2128,7 @@ function renderDashboardHTML(appName, payloadJson) {
     ctx.setLineDash([]);
 
     ctx.fillStyle = '#9fb1cc';
-    ctx.font = '22px -apple-system';
+    ctx.font = '12px -apple-system';
     ctx.fillText(state.mode === 'concentration' ? 'mg/L' : 'mg', 10, 24);
     ctx.fillText('Now', xNow + 8, padding.top + 20);
 
@@ -2059,7 +2137,7 @@ function renderDashboardHTML(appName, payloadJson) {
       const t = new Date(minT + (maxT - minT) * i / 4);
       const label = t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
       ctx.fillStyle = '#9fb1cc';
-      ctx.font = '20px -apple-system';
+      ctx.font = '11px -apple-system';
       ctx.fillText(label, x - 30, H - 10);
     }
 
@@ -2226,13 +2304,36 @@ function renderDashboardHTML(appName, payloadJson) {
   });
   canvas.addEventListener('touchstart', function(e) {
     if (!e.touches || !e.touches.length) return;
+    if (e.touches.length === 2) {
+      const a = e.touches[0];
+      const b = e.touches[1];
+      state.pinchStartDistance = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+      state.pinchStartDays = state.days;
+      return;
+    }
     updateHoverFromClientX(e.touches[0].clientX);
-  }, { passive: true });
+  }, { passive: false });
   canvas.addEventListener('touchmove', function(e) {
     if (!e.touches || !e.touches.length) return;
+    if (e.touches.length === 2 && state.pinchStartDistance && state.pinchStartDays) {
+      e.preventDefault();
+      const a = e.touches[0];
+      const b = e.touches[1];
+      const currentDistance = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+      if (currentDistance > 0) {
+        const proposed = clampDays(state.pinchStartDays * (state.pinchStartDistance / currentDistance));
+        if (proposed && proposed !== state.days) {
+          state.days = proposed;
+          draw(false);
+        }
+      }
+      return;
+    }
     updateHoverFromClientX(e.touches[0].clientX);
-  }, { passive: true });
+  }, { passive: false });
   canvas.addEventListener('touchend', function() {
+    state.pinchStartDistance = null;
+    state.pinchStartDays = null;
     clearHover();
   }, { passive: true });
 

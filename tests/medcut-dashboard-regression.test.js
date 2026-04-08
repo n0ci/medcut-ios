@@ -231,8 +231,14 @@ test('dashboard forms support class-first and typed substance filtering', () => 
 
   assert.match(
     source,
-    /<div class="category-picker-option' \+ active \+ '" role="button" tabindex="0" data-picker-kind="' \+ kind \+ '" data-category="' \+ category \+ '">/,
-    'Expected class menu options to render through dedicated custom picker markup.'
+    /const categoryOptions = Array\.isArray\(payload\.categories\) && payload\.categories\.length/,
+    'Expected class picker labels to come from payload-provided category options.'
+  );
+
+  assert.match(
+    source,
+    /const row = document\.createElement\('div'\);[\s\S]*?row\.textContent = option\.label;/,
+    'Expected class menu options to be built with DOM nodes and textContent, not string HTML.'
   );
 
   assert.match(

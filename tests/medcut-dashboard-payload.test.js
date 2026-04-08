@@ -195,6 +195,15 @@ test('dashboard payload includes overview counts, latest history ordering, and n
     'Expected history to be sorted newest first for the dashboard feed.'
   );
 
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(payload.categories)),
+    [
+      { value: 'all', label: 'All classes' },
+      { value: 'peptides', label: 'Peptides' }
+    ],
+    'Expected dashboard payload to include explicit category labels for custom pickers.'
+  );
+
   assert.equal(payload.datasets.amount_7.mode, 'amount');
   assert.equal(payload.datasets.concentration_7.mode, 'concentration');
   assert.equal(payload.datasets.amount_7.compounds.length, 2);

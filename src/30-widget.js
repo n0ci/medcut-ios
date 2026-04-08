@@ -11,6 +11,26 @@ function buildDashboardDatasets(data, defaults) {
   return datasets
 }
 
+function buildDashboardCategoryOptions(data) {
+  const seen = {}
+  const options = [{ value: "all", label: "All classes" }]
+  compoundNames(data)
+    .map(function(name) {
+      const compound = data.compounds[name] || {}
+      return compound.category || DEFAULT_CATEGORY
+    })
+    .sort()
+    .forEach(function(category) {
+      if (!category || seen[category]) return
+      seen[category] = true
+      options.push({
+        value: category,
+        label: titleCase(category)
+      })
+    })
+  return options
+}
+
 function buildDashboardPayload(data, rows) {
   const defaults = activeCompoundNames(data)
   const nextScheduledAt = rows
@@ -40,6 +60,7 @@ function buildDashboardPayload(data, rows) {
       .map(function(injection) { return injection.compound })
       .filter(function(value, index, list) { return list.indexOf(value) === index })
       .slice(0, 4),
+    categories: buildDashboardCategoryOptions(data),
     compounds: compoundNames(data).map(function(name) {
       const c = data.compounds[name]
       return {
@@ -1165,16 +1186,32 @@ function renderDashboardHTML(appName, payloadJson) {
   const HISTORY_PAGE_SIZE = 15;
   const UI_PREFS_KEY = 'medcut.dashboard.ui.v1';
   const PENDING_TOAST_KEY = 'medcut.dashboard.pendingToast.v1';
-  const categorySet = new Set(payload.compounds.map(function(c) { return c.category || BROWSER_DEFAULT_CATEGORY; }));
+  const categoryOptions = Array.isArray(payload.categories) && payload.categories.length
+    ? payload.categories.map(function(item) {
+        return {
+          value: String(item && item.value || 'all'),
+          label: String(item && item.label || 'All classes')
+        };
+      })
+    : (function() {
+        const categorySet = new Set(payload.compounds.map(function(c) { return c.category || BROWSER_DEFAULT_CATEGORY; }));
+        return ['all'].concat(Array.from(categorySet).sort()).map(function(category) {
+          return {
+            value: category,
+            label: category === 'all' ? 'All classes' : browserTitleCase(category)
+          };
+        });
+      })();
 
   applySavedUiPrefs();
 
   function availableCategories() {
-    return ['all'].concat(Array.from(categorySet).sort());
+    return categoryOptions.slice();
   }
 
   function categoryLabel(category) {
-    return category === 'all' ? 'All classes' : browserTitleCase(category);
+    const match = availableCategories().find(function(option) { return option.value === category; });
+    return match ? match.label : (category === 'all' ? 'All classes' : browserTitleCase(category));
   }
 
   function closeCategoryMenus() {
@@ -1210,11 +1247,18 @@ function renderDashboardHTML(appName, payloadJson) {
     trigger.setAttribute('aria-expanded', state.openCategoryPicker === kind ? 'true' : 'false');
 
     menu.classList.toggle('open', state.openCategoryPicker === kind);
-    menu.innerHTML = availableCategories().map(function(category) {
-      const label = categoryLabel(category);
-      const active = current === category ? ' active' : '';
-      return '<div class="category-picker-option' + active + '" role="button" tabindex="0" data-picker-kind="' + kind + '" data-category="' + category + '">' + escapeHtmlText(label) + '</div>';
-    }).join('');
+    while (menu.firstChild) menu.removeChild(menu.firstChild);
+    availableCategories().forEach(function(option) {
+      const active = current === option.value;
+      const row = document.createElement('div');
+      row.className = 'category-picker-option' + (active ? ' active' : '');
+      row.setAttribute('role', 'button');
+      row.tabIndex = 0;
+      row.setAttribute('data-picker-kind', kind);
+      row.setAttribute('data-category', option.value);
+      row.textContent = option.label;
+      menu.appendChild(row);
+    });
 
     trigger.onclick = function(event) {
       event.preventDefault();

@@ -171,8 +171,8 @@ test('dashboard includes in-app forms for injection logging and schedule creatio
 
   assert.match(
     source,
-    /action:\s*'add_protocol'/,
-    'Expected schedule form submission to route through add_protocol action payload.'
+    /action:\s*editingId \? 'edit_protocol' : 'add_protocol'/,
+    'Expected schedule form submission to switch between create and edit protocol actions.'
   );
 });
 
@@ -209,14 +209,14 @@ test('past injections are editable and deletable from history list', () => {
 
   assert.match(
     source,
-    /if \(action === "edit_injection"\)/,
-    'Expected shortcut backend to support updating existing injections.'
+    /edit_injection:\s*async function\(\)/,
+    'Expected shortcut backend to support updating existing injections through the action registry.'
   );
 
   assert.match(
     source,
-    /if \(action === "delete_injection"\)/,
-    'Expected shortcut backend to support deleting existing injections.'
+    /delete_injection:\s*async function\(\)/,
+    'Expected shortcut backend to support deleting existing injections through the action registry.'
   );
 
   assert.match(
@@ -247,7 +247,7 @@ test('entry form controls are responsive and can shrink without overflow', () =>
 
   assert.match(
     source,
-    /@media \(max-width: 980px\) \{\s*\.entry-panels \{ grid-template-columns: 1fr; \}/,
+    /@media \(max-width: 980px\) \{[\s\S]*?\.entry-panels \{ grid-template-columns: 1fr; \}/,
     'Expected entry panels to stack at medium widths to preserve usable form field widths.'
   );
 });
@@ -286,33 +286,33 @@ test('dashboard includes past injections history panel', () => {
   );
 });
 
-test('dashboard section order is graph first then concentrations then history then forms', () => {
-  const graphIdx = source.indexOf('<div class="section-title">Trend Graph</div>');
-  const cardsIdx = source.indexOf('<div class="section-title">Current Concentrations</div>');
-  const historyIdx = source.indexOf('<div class="section-title">Past Injections</div>');
-  const formsIdx = source.indexOf('<div class="section-title">Entry Forms</div>');
+test('dashboard prioritizes quick actions before status, graph, and history', () => {
+  const quickIdx = source.indexOf('<div class="section-title">Quick Actions</div>');
+  const cardsIdx = source.indexOf('<div class="section-title">Current Status</div>');
+  const graphIdx = source.indexOf('<div id="chart-section" class="section-title">Trend Graph</div>');
+  const historyIdx = source.indexOf('<div id="history-section" class="section-title">Past Injections</div>');
 
-  assert.ok(graphIdx !== -1 && cardsIdx !== -1 && historyIdx !== -1 && formsIdx !== -1, 'Expected all main section titles to exist.');
-  assert.ok(graphIdx < cardsIdx, 'Graph section should appear before concentrations section.');
-  assert.ok(cardsIdx < historyIdx, 'Concentrations section should appear before past injections section.');
-  assert.ok(historyIdx < formsIdx, 'Past injections section should appear before entry forms section.');
+  assert.ok(quickIdx !== -1 && cardsIdx !== -1 && graphIdx !== -1 && historyIdx !== -1, 'Expected the task-first dashboard sections to exist.');
+  assert.ok(quickIdx < cardsIdx, 'Quick actions should appear before current status cards.');
+  assert.ok(cardsIdx < graphIdx, 'Current status should appear before the trend graph.');
+  assert.ok(graphIdx < historyIdx, 'Trend graph should appear before past injections.');
 });
 
-test('graph controls are below chart and forms are collapsed by default', () => {
+test('graph controls remain below chart and quick log is expanded by default', () => {
   const chartIdx = source.indexOf('<div class="chart-wrap">');
   const toolbarIdx = source.indexOf('<div class="toolbar">');
   assert.ok(chartIdx !== -1 && toolbarIdx !== -1 && chartIdx < toolbarIdx, 'Expected graph controls below chart container.');
 
   assert.match(
     source,
-    /<details id="entry-log" class="entry-card">/,
-    'Expected log form to be collapsed details panel by default.'
+    /<details id="entry-log" class="entry-card primary" open>/,
+    'Expected quick log form to be open by default for faster daily entry.'
   );
 
   assert.match(
     source,
     /<details id="entry-schedule" class="entry-card">/,
-    'Expected schedule form to be collapsed details panel by default.'
+    'Expected schedule form to remain a collapsible details panel.'
   );
 
   assert.match(
@@ -337,6 +337,12 @@ test('graph controls are below chart and forms are collapsed by default', () => 
     source,
     /id="refresh-dashboard" class="pill" type="button" onclick="refreshDashboard\(\)"/,
     'Expected explicit dashboard refresh control in graph toolbar.'
+  );
+
+  assert.match(
+    source,
+    /class="action-grid"/,
+    'Expected top-level action cards for faster dashboard navigation.'
   );
 });
 

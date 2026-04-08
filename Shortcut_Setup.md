@@ -8,6 +8,9 @@ Most users do not need shortcuts to install MedCut. Install first with [Install_
 
 - Log Injection
 - Open Tracker
+- Add Protocol
+- Quick Log and reopen dashboard
+- Export Backup
 
 ## 1) Log Injection shortcut
 
@@ -26,6 +29,7 @@ Actions:
    - compound = chosen list value
    - dose_mg = number input
    - time = current date
+   - ui = dashboard (optional, reopens the updated dashboard after save)
 5. Run Script (Scriptable)
    - Script: MedCut
    - Input: Dictionary above
@@ -60,19 +64,51 @@ Actions:
    - occurrences = optional input
    - start = selected date
    - enabled = true
+   - ui = dashboard (optional, reopens dashboard after save)
 7. Run Script (Scriptable)
    - Script: MedCut
    - Input: Dictionary above
 
-## 4) JSON contract reminders
+## 4) Edit or delete recent injections
+
+These are usually faster from the in-app history list because the dashboard already exposes inline Edit/Delete controls.
+
+If you need automation:
+- `edit_injection` requires `injection_id`, `compound`, `dose_mg`, and `time`
+- `delete_injection` requires `injection_id`
+- `edit_protocol` requires `protocol_id` plus the fields you want to update
+- `toggle_protocol` requires `protocol_id` and `enabled`
+- `delete_protocol` requires `protocol_id`
+- both can include `ui = dashboard` to return to the refreshed dashboard after the action
+
+## 5) Export backup shortcut
+
+Actions:
+1. Dictionary
+   - action = export_backup
+2. Run Script (Scriptable)
+   - Script: MedCut
+   - Input: Dictionary above
+3. Optional:
+   - read the returned `backup_file`
+   - move/share the exported JSON file as needed for archival
+
+## 6) JSON contract reminders
 
 - The script accepts a dictionary or JSON string.
 - `category` is optional; when provided it targets a specific medication category file.
 - Action values:
   - log
+  - edit_injection
+  - delete_injection
   - add_protocol
+  - edit_protocol
+  - toggle_protocol
+  - delete_protocol
   - dashboard (or open)
   - summary
+  - export_backup
+- `ui = dashboard` or `ui = open` makes mutating actions reopen the dashboard instead of only returning shortcut output
 
 ## Category file auto-discovery
 
@@ -83,7 +119,7 @@ Actions:
    - `peptides.json`
    - `painkillers.json`
 
-## 5) Safety language for public shortcuts
+## 7) Safety language for public shortcuts
 
 Use this wording in shortcut descriptions:
 - Convenience tracking and visualization only.

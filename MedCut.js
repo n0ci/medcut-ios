@@ -2659,6 +2659,15 @@ function renderDashboardHTML(appName, payloadJson) {
   document.addEventListener('gestureend', e => e.preventDefault());
 
   const payload = ${payloadJson};
+  const BROWSER_DEFAULT_CATEGORY = 'general';
+
+  function browserTitleCase(value) {
+    return String(value || '')
+      .replace(/[_-]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .replace(/\b\w/g, function(char) { return char.toUpperCase(); });
+  }
 
   let state = {
     days: 7,
@@ -2688,7 +2697,7 @@ function renderDashboardHTML(appName, payloadJson) {
   const HISTORY_PAGE_SIZE = 15;
   const UI_PREFS_KEY = 'medcut.dashboard.ui.v1';
   const PENDING_TOAST_KEY = 'medcut.dashboard.pendingToast.v1';
-  const categorySet = new Set(payload.compounds.map(function(c) { return c.category || DEFAULT_CATEGORY; }));
+  const categorySet = new Set(payload.compounds.map(function(c) { return c.category || BROWSER_DEFAULT_CATEGORY; }));
 
   applySavedUiPrefs();
 
@@ -2699,7 +2708,7 @@ function renderDashboardHTML(appName, payloadJson) {
     Array.from(categorySet).sort().forEach(function(category) {
       const opt = document.createElement('option');
       opt.value = category;
-      opt.textContent = titleCase(category);
+      opt.textContent = browserTitleCase(category);
       select.appendChild(opt);
     });
   }
@@ -2714,7 +2723,7 @@ function renderDashboardHTML(appName, payloadJson) {
         const haystack = [
           compound.display_name || compound.name,
           compound.name,
-          compound.category || DEFAULT_CATEGORY
+          compound.category || BROWSER_DEFAULT_CATEGORY
         ].join(' ').toLowerCase();
         return haystack.indexOf(query) !== -1;
       })
@@ -2735,7 +2744,7 @@ function renderDashboardHTML(appName, payloadJson) {
     const compound = payload.compounds.find(function(item) { return item.name === compoundName; });
     if (!compound) return;
     if (!state.pickerFilters[kind]) state.pickerFilters[kind] = { category: 'all', query: '' };
-    state.pickerFilters[kind].category = compound.category || DEFAULT_CATEGORY;
+    state.pickerFilters[kind].category = compound.category || BROWSER_DEFAULT_CATEGORY;
     state.pickerFilters[kind].query = '';
     syncPickerInputs(kind);
   }

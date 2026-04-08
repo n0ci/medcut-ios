@@ -142,6 +142,12 @@ test('dashboard keeps only essential graph controls and simple ui preferences', 
     /Schema v<span id="schema"><\/span>|live estimate from logs and enabled schedules|getElementById\('schema'\)/,
     'The top header should avoid verbose schema/live-estimate copy.'
   );
+
+  assert.match(
+    source,
+    /const BROWSER_DEFAULT_CATEGORY = 'general';[\s\S]*?function browserTitleCase\(value\)/,
+    'Expected browser-local fallback helpers instead of Scriptable-only globals in the WebView.'
+  );
 });
 
 test('dashboard forms support class-first and typed substance filtering', () => {

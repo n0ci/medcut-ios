@@ -1,43 +1,15 @@
-# Shortcut Setup (Manual)
+# Shortcut Setup (Optional)
 
 This file is for maintainers and advanced users who want to build shortcuts manually.
 
-Most users do not need this file yet. The easiest install path is the bootstrap helper in [Install_MedCut.js](Install_MedCut.js).
+Most users do not need shortcuts to install MedCut. Install first with [Install_MedCut.js](Install_MedCut.js), then optionally add shortcuts for faster daily use.
 
-## Required shortcuts
+## Optional shortcuts
 
-- Install MedCut
 - Log Injection
 - Open Tracker
 
-## 1) Install MedCut shortcut
-
-Goal: bootstrap the installer helper and launch MedCut.
-
-Actions:
-1. URL
-   - https://raw.githubusercontent.com/n0ci/medcut-ios/main/Install_MedCut.js
-2. Get Contents of URL
-3. Save File
-   - Service: iCloud Drive
-   - Path: Scriptable/Install_MedCut.js
-4. Run Script (Scriptable)
-   - Script: Install_MedCut
-   - Input: None
-5. Create Text
-   - MedCut
-6. Run Script (Scriptable)
-   - Script: MedCut
-   - Input: {"action":"dashboard"}
-7. Show Notification
-   - MedCut installed
-
-Notes:
-- The shortcut only needs to install and run the bootstrap helper.
-- The bootstrap helper then downloads and installs MedCut.js and MedCutDashboard.js automatically.
-- MedCut creates the starter `medications/` and `history/` files the first time it runs, so the shortcut does not need to copy JSON files.
-
-## 2) Log Injection shortcut
+## 1) Log Injection shortcut
 
 Goal: fast logging with a dictionary payload.
 
@@ -62,7 +34,7 @@ Actions:
 Optional fields:
 - notes: free text
 
-## 3) Open Tracker shortcut
+## 2) Open Tracker shortcut
 
 Actions:
 1. Dictionary
@@ -71,7 +43,7 @@ Actions:
    - Script: MedCut
    - Input: Dictionary above
 
-## 4) Optional Add Protocol shortcut
+## 3) Optional Add Protocol shortcut
 
 Actions:
 1. Choose from List (compound)
@@ -92,7 +64,7 @@ Actions:
    - Script: MedCut
    - Input: Dictionary above
 
-## 5) JSON contract reminders
+## 4) JSON contract reminders
 
 - The script accepts a dictionary or JSON string.
 - `category` is optional; when provided it targets a specific medication category file.
@@ -111,7 +83,7 @@ Actions:
    - `peptides.json`
    - `painkillers.json`
 
-## 6) Safety language for public shortcuts
+## 5) Safety language for public shortcuts
 
 Use this wording in shortcut descriptions:
 - Convenience tracking and visualization only.

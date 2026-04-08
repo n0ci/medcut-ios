@@ -26,6 +26,7 @@
 ## 4) Shortcut checks
 
 - [ ] Bootstrap helper installs MedCut.js and MedCutDashboard.js automatically
+- [ ] Install shortcut uses `scriptable:///run/Install_MedCut` (no pre-selected Scriptable script required)
 - [ ] Install MedCut shortcut runs end-to-end on a clean device
 - [ ] Log Injection shortcut logs a record successfully
 - [ ] Optional category parameter routes logs to the expected category file

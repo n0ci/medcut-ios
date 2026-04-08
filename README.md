@@ -28,16 +28,23 @@ MedCut is a convenience visualization tool.
 ### 1. Install Scriptable
 Install Scriptable from the App Store.
 
-### 2. Run Install MedCut shortcut
-- Install shortcut: https://www.icloud.com/shortcuts/REPLACE_INSTALL_SHORTCUT_ID
+### 2. Add one tiny installer script
+Create one script in Scriptable named `Install_MedCut` and paste [Install_MedCut.js](Install_MedCut.js).
 
-The shortcut downloads [Install_MedCut.js](Install_MedCut.js), runs it, and installs the main MedCut script plus the dashboard module automatically.
+This installer downloads and installs both app scripts automatically:
+- [MedCut.js](MedCut.js)
+- [MedCutDashboard.js](MedCutDashboard.js)
+
+You only paste once.
 
 ### 3. Open MedCut once
 Run MedCut in Scriptable one time to grant permissions and let it create the starter data files automatically.
 
 ### 4. Optional: add shortcuts later
-You can add Shortcuts for faster logging and opening the dashboard after the app is running. They are optional.
+Shortcuts are optional and only for convenience/automation after install:
+- Quick log action
+- Quick open dashboard
+- Siri / automation triggers
 
 ### 5. Optional widget
 Add a Scriptable widget and select MedCut.
@@ -56,6 +63,10 @@ Published shortcuts:
 - Log Injection
 - Open Tracker
 - Optional Add Protocol
+
+Shortcut role:
+- Not required for installation
+- Recommended for daily-use speed
 
 Install behavior requirements:
 - Ensure script is created/updated in Scriptable as `MedCut`

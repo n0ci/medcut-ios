@@ -1,50 +1,27 @@
-// MedCut bootstrap installer for Scriptable.
-// Run this once to install MedCut.js and MedCutDashboard.js automatically.
+// Paste this once in Scriptable as: Install_MedCut
 
-const APP_NAME = "MedCut Installer"
-const REPO_BASE = "https://raw.githubusercontent.com/n0ci/medcut-ios/main/"
+const BASE = "https://raw.githubusercontent.com/n0ci/medcut-ios/main/"
+const FILES = ["MedCut.js", "MedCutDashboard.js"]
 const fm = FileManager.iCloud()
 
-function documentsPath() {
-  return fm.documentsDirectory()
-}
-
-function scriptPath(fileName) {
-  return fm.joinPath(documentsPath(), fileName)
-}
-
-async function fetchText(relativePath) {
-  const request = new Request(REPO_BASE + relativePath)
-  return await request.loadString()
-}
-
-async function installFile(fileName, relativePath) {
-  const content = await fetchText(relativePath)
-  fm.writeString(scriptPath(fileName), content)
-}
-
-async function showDone() {
-  const alert = new Alert()
-  alert.title = APP_NAME
-  alert.message = "MedCut and MedCutDashboard are installed. Open MedCut to finish setup."
-  alert.addAction("Open MedCut")
-  alert.addCancelAction("Close")
-  const index = await alert.presentAlert()
-  if (index === 0) {
-    Safari.open("scriptable:///run?scriptName=MedCut")
-  }
-}
-
 try {
-  await installFile("MedCut.js", "MedCut.js")
-  await installFile("MedCutDashboard.js", "MedCutDashboard.js")
-  await showDone()
-  Script.complete()
-} catch (error) {
-  const alert = new Alert()
-  alert.title = APP_NAME
-  alert.message = `Install failed: ${error && error.message ? error.message : error}`
-  alert.addAction("OK")
-  await alert.presentAlert()
-  Script.complete()
+  for (const name of FILES) {
+    const text = await new Request(BASE + name).loadString()
+    fm.writeString(fm.joinPath(fm.documentsDirectory(), name), text)
+  }
+
+  const done = new Alert()
+  done.title = "MedCut installed"
+  done.message = "Open MedCut now?"
+  done.addAction("Open")
+  done.addCancelAction("Later")
+  if (await done.presentAlert() === 0) Safari.open("scriptable:///run/MedCut")
+} catch (e) {
+  const fail = new Alert()
+  fail.title = "Install failed"
+  fail.message = String(e)
+  fail.addAction("OK")
+  await fail.presentAlert()
 }
+
+Script.complete()

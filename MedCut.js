@@ -633,9 +633,16 @@ async function ensureDataFiles() {
       return dose * f * Math.exp(-elimination * ageDays)
     }
 
-    function loggedEventsForCompound(data, compoundName) {
+    function loggedEventsForCompound(data, compoundName, fromTime, toTime) {
       return data.injections
-        .filter(function(injection) { return injection.compound === compoundName })
+        .filter(function(injection) {
+          if (injection.compound !== compoundName) return false
+          const at = dt(injection.time)
+          if (!isValidDate(at)) return false
+          if (fromTime && at < fromTime) return false
+          if (toTime && at > toTime) return false
+          return toNumber(injection.dose_mg, 0) > 0
+        })
         .map(function(injection) {
           return {
             compound: compoundName,
@@ -646,9 +653,11 @@ async function ensureDataFiles() {
         })
     }
 
-    function generateProtocolEvents(data, compoundName, fromTime, toTime) {
+    function generateProtocolEvents(data, compoundName, fromTime, toTime, options) {
       const events = []
       const now = new Date()
+      const includePast = Boolean(options && options.includePast)
+      const includeFuture = options && options.includeFuture === false ? false : true
       let globalCount = 0
 
       for (const protocol of data.protocols) {
@@ -671,14 +680,17 @@ async function ensureDataFiles() {
           if (until && isValidDate(until) && t > until) break
           if (t > toTime) break
 
-          if (t >= fromTime && t >= now) {
-            events.push({
-              compound: compoundName,
-              dose_mg: dose,
-              time: iso(t),
-              source: "protocol"
-            })
-            globalCount += 1
+          if (t >= fromTime) {
+            const isPast = t < now
+            if ((isPast && includePast) || (!isPast && includeFuture)) {
+              events.push({
+                compound: compoundName,
+                dose_mg: dose,
+                time: iso(t),
+                source: "protocol"
+              })
+              globalCount += 1
+            }
           }
 
           t = new Date(t.getTime() + stepDays * 86400000)
@@ -690,33 +702,40 @@ async function ensureDataFiles() {
       return events.sort(function(a, b) { return dt(a.time) - dt(b.time) })
     }
 
-    function allEventsForCompound(data, compoundName, fromTime, toTime) {
-      return loggedEventsForCompound(data, compoundName)
-        .concat(generateProtocolEvents(data, compoundName, fromTime, toTime))
+    function allEventsForCompound(data, compoundName, fromTime, toTime, options) {
+      const logged = loggedEventsForCompound(data, compoundName, fromTime, toTime)
+      const protocol = options && options.includeProtocols
+        ? generateProtocolEvents(data, compoundName, fromTime, toTime, options.protocolOptions || {})
+        : []
+      return logged
+        .concat(protocol)
         .sort(function(a, b) { return dt(a.time) - dt(b.time) })
     }
 
-    function amountForCompoundAt(data, compoundName, t) {
+    function amountForCompoundAt(data, compoundName, t, options) {
       const compound = data.compounds[compoundName]
       if (!compound) return 0
 
       const horizonStart = new Date(t.getTime() - HISTORY_LOOKBACK_DAYS * 86400000)
-      const events = allEventsForCompound(data, compoundName, horizonStart, t)
+      const events = allEventsForCompound(data, compoundName, horizonStart, t, options || {})
       let total = 0
       for (const event of events) total += eventAmountAtTime(event, t, compound)
       return total
     }
 
-    function concentrationForCompoundAt(data, compoundName, t) {
+    function concentrationForCompoundAt(data, compoundName, t, options) {
       const compound = data.compounds[compoundName]
       if (!compound) return null
       const vd = Math.max(0.001, toNumber(compound.vd_l, 10))
-      return amountForCompoundAt(data, compoundName, t) / vd
+      return amountForCompoundAt(data, compoundName, t, options) / vd
     }
 
     function nextScheduledDose(data, compoundName, fromTime) {
       const oneYearOut = new Date(fromTime.getTime() + 365 * 86400000)
-      const future = generateProtocolEvents(data, compoundName, fromTime, oneYearOut)
+      const future = generateProtocolEvents(data, compoundName, fromTime, oneYearOut, {
+        includePast: false,
+        includeFuture: true
+      })
       return future.length ? future[0] : null
     }
 
@@ -733,8 +752,14 @@ async function ensureDataFiles() {
         const compound = data.compounds[name]
         if (!compound) continue
 
-        const amount = amountForCompoundAt(data, name, now)
-        const concentration = concentrationForCompoundAt(data, name, now)
+        const amount = amountForCompoundAt(data, name, now, {
+          includeProtocols: true,
+          protocolOptions: { includePast: true, includeFuture: false }
+        })
+        const concentration = concentrationForCompoundAt(data, name, now, {
+          includeProtocols: true,
+          protocolOptions: { includePast: true, includeFuture: false }
+        })
         const nextDose = nextScheduledDose(data, name, now)
         const lastDose = data.injections
           .filter(function(injection) { return injection.compound === name })
@@ -765,8 +790,14 @@ async function ensureDataFiles() {
       const now = new Date()
       const start = new Date(now.getTime() - daysBack * 86400000)
       const end = new Date(now.getTime() + daysForward * 86400000)
+      const spanDays = daysBack + daysForward
       let stepHours = 6
-      if (daysBack + daysForward > 120) stepHours = 12
+      if (spanDays <= 3) stepHours = 0.25
+      else if (spanDays <= 14) stepHours = 0.5
+      else if (spanDays <= 45) stepHours = 1
+      else if (spanDays <= 120) stepHours = 3
+      else if (spanDays <= 360) stepHours = 6
+      else stepHours = 12
       const stepMs = stepHours * 3600000
 
       const dataset = {
@@ -786,14 +817,23 @@ async function ensureDataFiles() {
           const time = new Date(t)
           let value = 0
           if (mode === "concentration") {
-            value = concentrationForCompoundAt(data, name, time)
+            value = concentrationForCompoundAt(data, name, time, {
+              includeProtocols: true,
+              protocolOptions: { includePast: true, includeFuture: true }
+            })
           } else {
-            value = amountForCompoundAt(data, name, time)
+            value = amountForCompoundAt(data, name, time, {
+              includeProtocols: true,
+              protocolOptions: { includePast: true, includeFuture: true }
+            })
           }
           points.push([iso(time), Number(Math.max(0, value || 0).toFixed(6))])
         }
 
-        const markers = allEventsForCompound(data, name, start, end)
+        const markers = allEventsForCompound(data, name, start, end, {
+          includeProtocols: true,
+          protocolOptions: { includePast: true, includeFuture: true }
+        })
           .map(function(event) {
             return [event.time, event.dose_mg, event.source]
           })
@@ -870,6 +910,74 @@ async function ensureDataFiles() {
       saveHistoryFile(compound.source_file, fileState.history, fileState.compounds)
 
       pushMergedInjection(data, compoundName, dose, iso(time), notes, "log")
+    }
+
+    function updateInjectionEntry(data, injectionId, compoundName, doseMg, timeValue, notes) {
+      const id = String(injectionId || "").trim()
+      if (!id) throw new Error("Missing injection id")
+
+      const injectionIndex = data.injections.findIndex(function(injection) {
+        return String(injection.id || "") === id
+      })
+      if (injectionIndex < 0) throw new Error("Injection not found: " + id)
+
+      const existing = data.injections[injectionIndex]
+      const existingCompound = data.compounds[existing.compound]
+      const compound = data.compounds[compoundName]
+      if (!compound) throw new Error("Unknown compound: " + compoundName)
+
+      const dose = toNumber(doseMg, NaN)
+      if (!Number.isFinite(dose) || dose <= 0) throw new Error("Dose must be a positive number")
+
+      const time = new Date(timeValue || existing.time)
+      if (!isValidDate(time)) throw new Error("Invalid time")
+
+      const sourceFileName = existing.source_file || (existingCompound ? existingCompound.source_file : compound.source_file)
+      const targetFileName = compound.source_file
+      const sourceFileState = data.__files[sourceFileName]
+      const targetFileState = data.__files[targetFileName]
+      if (!sourceFileState || !targetFileState) throw new Error("Unable to resolve history file for injection update")
+
+      const sourceIndex = sourceFileState.history.injections.findIndex(function(injection) {
+        return String(injection.id || "") === id
+      })
+      if (sourceIndex < 0) throw new Error("Injection not found in history file: " + id)
+
+      const updatedHistoryRecord = {
+        id: id,
+        compound: compound.base_key,
+        dose_mg: dose,
+        time: iso(time),
+        source: existing.source || "log",
+        notes: notes || ""
+      }
+
+      if (sourceFileName === targetFileName) {
+        sourceFileState.history.injections[sourceIndex] = updatedHistoryRecord
+        sourceFileState.history.injections.sort(function(a, b) { return dt(a.time) - dt(b.time) })
+        saveHistoryFile(sourceFileName, sourceFileState.history, sourceFileState.compounds)
+      } else {
+        sourceFileState.history.injections.splice(sourceIndex, 1)
+        targetFileState.history.injections.push(updatedHistoryRecord)
+
+        sourceFileState.history.injections.sort(function(a, b) { return dt(a.time) - dt(b.time) })
+        targetFileState.history.injections.sort(function(a, b) { return dt(a.time) - dt(b.time) })
+
+        saveHistoryFile(sourceFileName, sourceFileState.history, sourceFileState.compounds)
+        saveHistoryFile(targetFileName, targetFileState.history, targetFileState.compounds)
+      }
+
+      data.injections[injectionIndex] = {
+        id: id,
+        compound: compoundName,
+        dose_mg: dose,
+        time: iso(time),
+        source: existing.source || "log",
+        notes: notes || "",
+        category: compound.category,
+        source_file: targetFileName
+      }
+      data.injections.sort(function(a, b) { return dt(a.time) - dt(b.time) })
     }
 
     function addProtocolEntry(data, entry) {
@@ -1183,10 +1291,29 @@ function renderDashboardHTML(appName, payloadJson) {
     padding: 8px 10px;
   }
   .advanced-panel summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
     cursor: pointer;
     color: var(--muted);
     font-size: 12px;
     list-style: none;
+  }
+  .advanced-summary {
+    display: inline-block;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.14);
+    background: rgba(255,255,255,0.06);
+    color: #c8d9f5;
+    padding: 2px 8px;
+    font-size: 10px;
+    line-height: 1.4;
+  }
+  .advanced-summary.active {
+    border-color: rgba(95, 196, 255, 0.45);
+    background: rgba(55, 132, 182, 0.26);
+    color: #dff2ff;
   }
   .advanced-panel summary::-webkit-details-marker {
     display: none;
@@ -1199,6 +1326,11 @@ function renderDashboardHTML(appName, payloadJson) {
   }
   .advanced-grid select {
     width: 100%;
+  }
+  .advanced-actions {
+    margin-top: 8px;
+    display: flex;
+    justify-content: flex-end;
   }
   .entry-panels {
     display: grid;
@@ -1243,15 +1375,25 @@ function renderDashboardHTML(appName, payloadJson) {
     gap: 8px;
     padding: 10px;
   }
+  .entry-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
   .entry-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
   }
+  .entry-row > * {
+    min-width: 0;
+  }
   .entry-card input,
   .entry-card textarea,
   .entry-card select {
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
     box-sizing: border-box;
     border-radius: 10px;
     border: 1px solid rgba(255,255,255,0.14);
@@ -1331,6 +1473,15 @@ function renderDashboardHTML(appName, payloadJson) {
     margin-top: 3px;
     font-size: 11px;
     color: var(--muted);
+  }
+  .history-item .actions {
+    margin-top: 7px;
+    display: flex;
+    justify-content: flex-end;
+  }
+  .history-item .history-edit {
+    font-size: 11px;
+    padding: 5px 10px;
   }
   .chart-wrap {
     position: relative;
@@ -1413,10 +1564,12 @@ function renderDashboardHTML(appName, payloadJson) {
     color: #89a0c2;
     font-size: 12px;
   }
+  @media (max-width: 980px) {
+    .entry-panels { grid-template-columns: 1fr; }
+  }
   @media (max-width: 700px) {
     .cards { grid-template-columns: 1fr; }
     .advanced-grid { grid-template-columns: 1fr; }
-    .entry-panels { grid-template-columns: 1fr; }
     .entry-row { grid-template-columns: 1fr; }
   }
 </style>
@@ -1441,13 +1594,12 @@ function renderDashboardHTML(appName, payloadJson) {
     <button id="window-30" class="pill" onclick="setWindow(30)">30d</button>
     <button id="window-90" class="pill" onclick="setWindow(90)">90d</button>
     <input id="custom-days" type="number" min="1" max="365" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="Custom days" style="width:120px" />
-    <button class="pill" type="button" onclick="applyCustomDays()">Apply</button>
     <button id="mode-amount" class="pill" onclick="setMode('amount')">Amount</button>
     <button id="mode-concentration" class="pill" onclick="setMode('concentration')">Concentration</button>
   </div>
 
   <details class="advanced-panel">
-    <summary>Advanced Filters and Chart Detail</summary>
+    <summary>Advanced Controls <span id="advanced-summary" class="advanced-summary">All data</span></summary>
     <div class="advanced-grid">
       <select id="routeFilter" onchange="setRouteFilter(this.value)">
         <option value="all">All routes</option>
@@ -1462,11 +1614,14 @@ function renderDashboardHTML(appName, payloadJson) {
         <option value="all">All categories</option>
       </select>
       <select id="chartDetail" onchange="setChartDetail(this.value)">
-        <option value="markers">Chart detail: Events</option>
-        <option value="minimal">Chart detail: Minimal</option>
-        <option value="insight">Chart detail: Events + Total</option>
-        <option value="full">Chart detail: Full</option>
+        <option value="markers">Events</option>
+        <option value="minimal">Minimal</option>
+        <option value="insight">Events + Total</option>
+        <option value="full">Full</option>
       </select>
+    </div>
+    <div class="advanced-actions">
+      <button class="pill" type="button" onclick="resetAdvancedControls()">Reset filters</button>
     </div>
   </details>
 
@@ -1508,7 +1663,10 @@ function renderDashboardHTML(appName, payloadJson) {
         </div>
         <input id="log-time" type="time" required>
         <textarea id="log-notes" placeholder="Optional notes"></textarea>
-        <button class="pill" type="submit">Save Injection</button>
+        <div class="entry-actions">
+          <button id="log-submit" class="pill" type="submit">Save Injection</button>
+          <button id="log-cancel-edit" class="pill" type="button" onclick="cancelLogEdit()" style="display:none">Cancel Edit</button>
+        </div>
       </form>
       <div id="log-status" class="entry-status"></div>
     </details>
@@ -1559,9 +1717,11 @@ function renderDashboardHTML(appName, payloadJson) {
     enabled: payload.datasets.amount_7.compounds.map(c => c.name),
     hoverX: null,
     pinchStartDistance: null,
-    pinchStartDays: null
+    pinchStartDays: null,
+    editInjectionId: null
   };
   const HISTORY_PAGE_SIZE = 15;
+  const UI_PREFS_KEY = 'medcut.dashboard.ui.v1';
 
   const routeSet = new Set(payload.compounds.map(c => c.route || 'unknown'));
   const routeSelect = document.getElementById('routeFilter');
@@ -1584,6 +1744,8 @@ function renderDashboardHTML(appName, payloadJson) {
   if (categorySet.size <= 1) {
     categorySelect.style.display = 'none';
   }
+
+  applySavedUiPrefs();
 
   function fillCompoundSelect(selectId) {
     const select = document.getElementById(selectId);
@@ -1622,8 +1784,12 @@ function renderDashboardHTML(appName, payloadJson) {
   const customDaysInput = document.getElementById('custom-days');
   if (customDaysInput) {
     customDaysInput.addEventListener('change', function() {
-      const clamped = clampDays(customDaysInput.value);
-      customDaysInput.value = clamped ? String(clamped) : String(state.days);
+      applyCustomDays();
+    });
+    customDaysInput.addEventListener('keydown', function(event) {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      applyCustomDays();
     });
   }
 
@@ -1702,7 +1868,14 @@ function renderDashboardHTML(appName, payloadJson) {
     const direct = payload.datasets[state.mode + '_' + state.days];
     if (direct) return direct;
 
-    const base = payload.datasets[state.mode + '_365'] || payload.datasets[state.mode + '_180'];
+    let base = null;
+    if (state.days <= 7) base = payload.datasets[state.mode + '_7'];
+    else if (state.days <= 30) base = payload.datasets[state.mode + '_30'];
+    else if (state.days <= 90) base = payload.datasets[state.mode + '_90'];
+    else if (state.days <= 180) base = payload.datasets[state.mode + '_180'];
+    else base = payload.datasets[state.mode + '_365'];
+
+    if (!base) base = payload.datasets[state.mode + '_365'] || payload.datasets[state.mode + '_180'];
     if (!base) return payload.datasets[state.mode + '_90'];
 
     const now = new Date(base.now).getTime();
@@ -1742,29 +1915,48 @@ function renderDashboardHTML(appName, payloadJson) {
     draw(false);
   }
   function setMode(mode) { state.mode = mode; draw(false); }
-  function setRouteFilter(route) { state.routeFilter = route; resetHistoryPagination(); draw(false); }
-  function setQualityFilter(quality) { state.qualityFilter = quality; resetHistoryPagination(); draw(false); }
-  function setCategoryFilter(category) { state.categoryFilter = category; resetHistoryPagination(); draw(false); }
+  function setRouteFilter(route) { state.routeFilter = route; saveUiPrefs(); resetHistoryPagination(); draw(false); }
+  function setQualityFilter(quality) { state.qualityFilter = quality; saveUiPrefs(); resetHistoryPagination(); draw(false); }
+  function setCategoryFilter(category) { state.categoryFilter = category; saveUiPrefs(); resetHistoryPagination(); draw(false); }
 
-  function setChartDetail(detail) {
+  function applyChartDetailState(detail) {
     state.chartDetail = detail;
     if (detail === 'minimal') {
       state.showMarkers = false;
       state.showTotal = false;
       state.showTrend = false;
-    } else if (detail === 'markers') {
+      return;
+    }
+    if (detail === 'markers') {
       state.showMarkers = true;
       state.showTotal = false;
       state.showTrend = false;
-    } else if (detail === 'insight') {
+      return;
+    }
+    if (detail === 'insight') {
       state.showMarkers = true;
       state.showTotal = true;
       state.showTrend = false;
-    } else {
-      state.showMarkers = true;
-      state.showTotal = true;
-      state.showTrend = true;
+      return;
     }
+    state.showMarkers = true;
+    state.showTotal = true;
+    state.showTrend = true;
+  }
+
+  function setChartDetail(detail) {
+    applyChartDetailState(detail);
+    saveUiPrefs();
+    draw(false);
+  }
+
+  function resetAdvancedControls() {
+    state.routeFilter = 'all';
+    state.qualityFilter = 'all';
+    state.categoryFilter = 'all';
+    applyChartDetailState('markers');
+    saveUiPrefs();
+    resetHistoryPagination();
     draw(false);
   }
 
@@ -1818,8 +2010,71 @@ function renderDashboardHTML(appName, payloadJson) {
     const detail = document.getElementById('chartDetail');
     if (detail && detail.value !== state.chartDetail) detail.value = state.chartDetail;
 
+    const advancedSummary = document.getElementById('advanced-summary');
+    if (advancedSummary) {
+      const active = activeFilterDescriptions();
+      advancedSummary.textContent = active.length ? (active.length + ' active') : 'All data';
+      advancedSummary.title = active.length ? active.join(' | ') : 'No active filters';
+      advancedSummary.classList.toggle('active', active.length > 0);
+    }
+
     const custom = document.getElementById('custom-days');
     if (custom) custom.value = String(state.days);
+  }
+
+  function activeFilterDescriptions() {
+    const items = [];
+    if (state.routeFilter !== 'all') items.push('Route: ' + state.routeFilter);
+    if (state.qualityFilter !== 'all') items.push('Confidence: ' + state.qualityFilter);
+    if (state.categoryFilter !== 'all') items.push('Category: ' + state.categoryFilter);
+    return items;
+  }
+
+  function buildNoDataWarningDetail() {
+    const active = activeFilterDescriptions();
+    if (!active.length) {
+      return 'Adjust filters or log an injection to generate chart data.';
+    }
+    return 'Current filters: ' + active.join(' • ') + '. Adjust filters or log an injection to generate chart data.';
+  }
+
+  function applySavedUiPrefs() {
+    let parsed = null;
+    try {
+      const raw = localStorage.getItem(UI_PREFS_KEY);
+      if (raw) parsed = JSON.parse(raw);
+    } catch (error) {
+      parsed = null;
+    }
+    if (!parsed || typeof parsed !== 'object') {
+      applyChartDetailState(state.chartDetail);
+      return;
+    }
+
+    const route = typeof parsed.routeFilter === 'string' ? parsed.routeFilter : 'all';
+    state.routeFilter = route === 'all' || routeSet.has(route) ? route : 'all';
+
+    const quality = typeof parsed.qualityFilter === 'string' ? parsed.qualityFilter : 'all';
+    state.qualityFilter = quality === 'all' || quality === 'good' || quality === 'rough' || quality === 'low' ? quality : 'all';
+
+    const category = typeof parsed.categoryFilter === 'string' ? parsed.categoryFilter : 'all';
+    state.categoryFilter = category === 'all' || categorySet.has(category) ? category : 'all';
+
+    const detail = typeof parsed.chartDetail === 'string' ? parsed.chartDetail : 'markers';
+    applyChartDetailState(detail === 'markers' || detail === 'minimal' || detail === 'insight' || detail === 'full' ? detail : 'markers');
+  }
+
+  function saveUiPrefs() {
+    try {
+      localStorage.setItem(UI_PREFS_KEY, JSON.stringify({
+        routeFilter: state.routeFilter,
+        qualityFilter: state.qualityFilter,
+        categoryFilter: state.categoryFilter,
+        chartDetail: state.chartDetail
+      }));
+    } catch (error) {
+      // Ignore storage errors; dashboard still works with in-memory state.
+    }
   }
 
   function focusEntry(kind) {
@@ -1834,6 +2089,60 @@ function renderDashboardHTML(appName, payloadJson) {
   function setFormStatus(id, message) {
     const el = document.getElementById(id);
     if (el) el.textContent = message;
+  }
+
+  function setLogEditState(injectionId) {
+    state.editInjectionId = injectionId ? String(injectionId) : null;
+    const submit = document.getElementById('log-submit');
+    const cancel = document.getElementById('log-cancel-edit');
+    if (submit) submit.textContent = state.editInjectionId ? 'Save Changes' : 'Save Injection';
+    if (cancel) cancel.style.display = state.editInjectionId ? 'inline-block' : 'none';
+  }
+
+  function cancelLogEdit() {
+    setLogEditState(null);
+    setFormStatus('log-status', 'Edit cancelled.');
+  }
+
+  function startEditInjection(injectionId) {
+    const id = String(injectionId || '').trim();
+    if (!id) return;
+
+    const entry = (payload.injection_history || []).find(function(item) {
+      return String(item.id || '') === id;
+    });
+    if (!entry) {
+      setFormStatus('log-status', 'Unable to find this injection for editing.');
+      return;
+    }
+
+    const at = new Date(entry.time);
+    if (!Number.isFinite(at.getTime())) {
+      setFormStatus('log-status', 'Selected injection has an invalid timestamp.');
+      return;
+    }
+
+    const yyyy = at.getFullYear();
+    const mm = String(at.getMonth() + 1).padStart(2, '0');
+    const dd = String(at.getDate()).padStart(2, '0');
+    const hh = String(at.getHours()).padStart(2, '0');
+    const min = String(at.getMinutes()).padStart(2, '0');
+
+    const compound = document.getElementById('log-compound');
+    const dose = document.getElementById('log-dose');
+    const date = document.getElementById('log-date');
+    const time = document.getElementById('log-time');
+    const notes = document.getElementById('log-notes');
+
+    if (compound) compound.value = entry.compound || '';
+    if (dose) dose.value = Number(entry.dose_mg || 0).toString();
+    if (date) date.value = yyyy + '-' + mm + '-' + dd;
+    if (time) time.value = hh + ':' + min;
+    if (notes) notes.value = String(entry.notes || '');
+
+    setLogEditState(id);
+    focusEntry('log');
+    setFormStatus('log-status', 'Editing past injection. Save Changes to update it.');
   }
 
   function buildRunUrl(params) {
@@ -1852,6 +2161,8 @@ function renderDashboardHTML(appName, payloadJson) {
     const date = document.getElementById('log-date').value;
     const time = document.getElementById('log-time').value;
     const notes = document.getElementById('log-notes').value.trim();
+    const editingId = state.editInjectionId;
+    const action = editingId ? 'edit_injection' : 'log';
 
     if (!(dose > 0)) {
       setFormStatus('log-status', 'Dose must be greater than 0.');
@@ -1865,14 +2176,15 @@ function renderDashboardHTML(appName, payloadJson) {
     }
 
     const url = buildRunUrl({
-      action: 'log',
+      action: action,
       ui: 'dashboard',
+      injection_id: editingId,
       compound: compound,
       dose_mg: dose,
       time: at.toISOString(),
       notes: notes
     });
-    setFormStatus('log-status', 'Opening MedCut to save injection...');
+    setFormStatus('log-status', editingId ? 'Opening MedCut to update injection...' : 'Opening MedCut to save injection...');
     window.location.href = url;
   }
 
@@ -2003,13 +2315,22 @@ function renderDashboardHTML(appName, payloadJson) {
       const category = escapeHtmlText(item.category || 'general');
       const route = escapeHtmlText(item.route || 'unknown');
       const source = escapeHtmlText(item.source || 'log');
+      const editId = item.id ? escapeHtmlText(item.id) : '';
       const notes = item.notes ? (' • Notes: ' + escapeHtmlText(item.notes)) : '';
       return '<div class="history-item">'
         + '<div class="top"><strong>' + display + '</strong><span>' + dose + ' mg</span></div>'
         + '<div class="meta">' + whenRel + ' • ' + whenAbs + '</div>'
         + '<div class="meta">' + category + ' • ' + route + ' • ' + source + notes + '</div>'
+        + '<div class="actions">' + (editId ? ('<button class="pill history-edit" type="button" data-edit-id="' + editId + '">Edit</button>') : '') + '</div>'
         + '</div>';
     }).join('');
+
+    const editButtons = list.querySelectorAll('button[data-edit-id]');
+    editButtons.forEach(function(button) {
+      button.addEventListener('click', function() {
+        startEditInjection(button.getAttribute('data-edit-id') || '');
+      });
+    });
   }
 
   function draw(chartOnly) {
@@ -2081,7 +2402,7 @@ function renderDashboardHTML(appName, payloadJson) {
     }
 
     if (!enabled.length) {
-      setPlotWarning('No data available for this plot', 'Adjust filters or log an injection to generate chart data.');
+      setPlotWarning('No data available for this plot', buildNoDataWarningDetail());
       return;
     }
 
@@ -2503,6 +2824,37 @@ async function handleShortcut(data, input) {
       ok: true,
       action: "log",
       schema_version: data.schema_version,
+      compound: compound,
+      display_name: c.display_name || titleCase(compound),
+      category: c.category || DEFAULT_CATEGORY,
+      dose_mg: dose,
+      time: iso(time),
+      file: categoryFilePath(c.source_file),
+      history_file: historyFilePath(c.source_file)
+    })
+    return
+  }
+
+  if (action === "edit_injection") {
+    const injectionId = String(input.injection_id != null ? input.injection_id : input.id || "").trim()
+    if (!injectionId) throw new Error("Missing injection_id")
+
+    const compound = normalizeCompoundKey(data, input.compound, input.category)
+    if (!compound) throw new Error("Unknown compound: " + input.compound)
+    const dose = toNumber(input.dose_mg != null ? input.dose_mg : input.dose, NaN)
+    const time = input.time ? new Date(input.time) : new Date()
+    const c = data.compounds[compound]
+
+    updateInjectionEntry(data, injectionId, compound, dose, time, input.notes || "")
+    if (returnDashboard) {
+      await presentDashboard(data)
+      return
+    }
+    shortcutOutput({
+      ok: true,
+      action: "edit_injection",
+      schema_version: data.schema_version,
+      injection_id: injectionId,
       compound: compound,
       display_name: c.display_name || titleCase(compound),
       category: c.category || DEFAULT_CATEGORY,

@@ -65,3 +65,51 @@ test('normalizeCompoundKey matching is deterministic and category-aware', () => 
     'Expected exact full-id match preference.'
   );
 });
+
+test('buildSeries uses finer temporal resolution for short windows', () => {
+  assert.match(
+    source,
+    /if \(spanDays <= 3\) stepHours = 0\.25/,
+    'Expected 15-minute sampling for very short windows.'
+  );
+
+  assert.match(
+    source,
+    /else if \(spanDays <= 14\) stepHours = 0\.5/,
+    'Expected 30-minute sampling for short windows.'
+  );
+
+  assert.match(
+    source,
+    /else if \(spanDays <= 45\) stepHours = 1/,
+    'Expected hourly sampling for medium-short windows.'
+  );
+});
+
+test('current concentration cards are computed from full history (logged + schedule)', () => {
+  assert.match(
+    source,
+    /amountForCompoundAt\(data, name, now, \{\s*includeProtocols: true,\s*protocolOptions: \{ includePast: true, includeFuture: false \}\s*\}\)/,
+    'Expected current amount to include both logged and scheduled history events.'
+  );
+
+  assert.match(
+    source,
+    /concentrationForCompoundAt\(data, name, now, \{\s*includeProtocols: true,\s*protocolOptions: \{ includePast: true, includeFuture: false \}\s*\}\)/,
+    'Expected current concentration to include both logged and scheduled history events.'
+  );
+});
+
+test('graph series include both past and future protocol events from schedule history', () => {
+  assert.match(
+    source,
+    /protocolOptions: \{ includePast: true, includeFuture: true \}/,
+    'Expected graph calculations to include schedule events across the displayed window.'
+  );
+
+  assert.match(
+    source,
+    /const includePast = Boolean\(options && options\.includePast\)/,
+    'Expected protocol generation to support explicit past inclusion toggle.'
+  );
+});

@@ -69,8 +69,8 @@ test('plot warning rendering avoids innerHTML injection', () => {
 test('draw() still surfaces no-data warning states', () => {
   assert.match(
     source,
-    /setPlotWarning\('No data available for this plot', 'Adjust filters or log an injection to generate chart data\.'\);/,
-    'Expected explicit warning when filters produce no series.'
+    /setPlotWarning\('No data available for this plot', buildNoDataWarningDetail\(\)\);/,
+    'Expected no-data warning to include filter-aware detail context.'
   );
 
   assert.match(
@@ -92,6 +92,56 @@ test('dashboard exposes collapsible advanced controls and chart detail preset', 
     /<select id="chartDetail" onchange="setChartDetail\(this.value\)">/,
     'Expected a single chart detail preset control.'
   );
+
+  assert.match(
+    source,
+    /id="advanced-summary" class="advanced-summary"/,
+    'Expected advanced summary badge for active filter visibility.'
+  );
+
+  assert.match(
+    source,
+    /onclick="resetAdvancedControls\(\)"/,
+    'Expected quick reset action for advanced filters.'
+  );
+
+  assert.match(
+    source,
+    /<option value="markers">Events<\/option>/,
+    'Expected concise chart detail labels for faster scanning.'
+  );
+});
+
+test('advanced filters and chart detail preferences persist across dashboard opens', () => {
+  assert.match(
+    source,
+    /const UI_PREFS_KEY = 'medcut\.dashboard\.ui\.v1';/,
+    'Expected a stable localStorage key for dashboard UI preferences.'
+  );
+
+  assert.match(
+    source,
+    /function applySavedUiPrefs\(\)/,
+    'Expected preference restore handler during dashboard initialization.'
+  );
+
+  assert.match(
+    source,
+    /localStorage\.setItem\(UI_PREFS_KEY, JSON\.stringify\(\{/,
+    'Expected preference save handler to persist advanced control state.'
+  );
+
+  assert.match(
+    source,
+    /function setRouteFilter\(route\) \{ state\.routeFilter = route; saveUiPrefs\(\); resetHistoryPagination\(\); draw\(false\); \}/,
+    'Expected route filter changes to be persisted.'
+  );
+
+  assert.match(
+    source,
+    /function setChartDetail\(detail\) \{\s*applyChartDetailState\(detail\);\s*saveUiPrefs\(\);\s*draw\(false\);\s*\}/,
+    'Expected chart detail changes to be persisted.'
+  );
 });
 
 test('dashboard includes in-app forms for injection logging and schedule creation', () => {
@@ -109,8 +159,8 @@ test('dashboard includes in-app forms for injection logging and schedule creatio
 
   assert.match(
     source,
-    /action:\s*'log'/,
-    'Expected log form submission to route through log action payload.'
+    /const action = editingId \? 'edit_injection' : 'log';/,
+    'Expected log form submission to switch between create and edit actions.'
   );
 
   assert.match(
@@ -123,6 +173,58 @@ test('dashboard includes in-app forms for injection logging and schedule creatio
     source,
     /action:\s*'add_protocol'/,
     'Expected schedule form submission to route through add_protocol action payload.'
+  );
+});
+
+test('past injections are editable from history list', () => {
+  assert.match(
+    source,
+    /<button class="pill history-edit" type="button" data-edit-id="/,
+    'Expected each history row to include an Edit button with injection id wiring.'
+  );
+
+  assert.match(
+    source,
+    /function startEditInjection\(injectionId\)/,
+    'Expected edit handler to prefill the log form with selected injection values.'
+  );
+
+  assert.match(
+    source,
+    /function cancelLogEdit\(\)/,
+    'Expected explicit cancel path for injection edit mode.'
+  );
+
+  assert.match(
+    source,
+    /if \(action === "edit_injection"\)/,
+    'Expected shortcut backend to support updating existing injections.'
+  );
+
+  assert.match(
+    source,
+    /updateInjectionEntry\(data, injectionId, compound, dose, time, input\.notes \|\| ""\)/,
+    'Expected edit action to persist injection updates through storage layer helper.'
+  );
+});
+
+test('entry form controls are responsive and can shrink without overflow', () => {
+  assert.match(
+    source,
+    /\.entry-row > \* \{\s*min-width: 0;/,
+    'Expected row children to allow shrinking so date/time controls do not overflow.'
+  );
+
+  assert.match(
+    source,
+    /\.entry-card input,[\s\S]*?max-width: 100%;[\s\S]*?min-width: 0;/,
+    'Expected entry inputs to be width-constrained and shrinkable in narrow layouts.'
+  );
+
+  assert.match(
+    source,
+    /@media \(max-width: 980px\) \{\s*\.entry-panels \{ grid-template-columns: 1fr; \}/,
+    'Expected entry panels to stack at medium widths to preserve usable form field widths.'
   );
 });
 
@@ -251,6 +353,24 @@ test('graph supports custom day window and pinch interaction', () => {
     source,
     /id="custom-days" type="number" min="1" max="365" step="1" inputmode="numeric"/,
     'Expected integer-focused custom day input configuration.'
+  );
+
+  assert.doesNotMatch(
+    source,
+    /onclick="applyCustomDays\(\)">Apply<\/button>/,
+    'Expected no explicit Apply button; custom day value should auto-apply.'
+  );
+
+  assert.match(
+    source,
+    /customDaysInput\.addEventListener\('change', function\(\) \{\s*applyCustomDays\(\);\s*\}\);/,
+    'Expected custom day changes to auto-apply chart window.'
+  );
+
+  assert.match(
+    source,
+    /customDaysInput\.addEventListener\('keydown', function\(event\) \{[\s\S]*?event\.key !== 'Enter'[\s\S]*?applyCustomDays\(\);[\s\S]*?\}\);/,
+    'Expected Enter key on custom day input to auto-apply window changes.'
   );
 
   assert.match(

@@ -373,8 +373,20 @@ test('entry form controls are responsive and can shrink without overflow', () =>
 
   assert.match(
     source,
-    /\.entry-card input\[type="date"\],[\s\S]*?width: 100%;[\s\S]*?max-width: 100%;[\s\S]*?min-inline-size: 0;[\s\S]*?inline-size: 100%;[\s\S]*?box-sizing: border-box;/,
+    /\.entry-card input\[type="date"\],[\s\S]*?width: 100%;[\s\S]*?width: -webkit-fill-available;[\s\S]*?max-width: 100%;[\s\S]*?max-width: -webkit-fill-available;[\s\S]*?min-inline-size: 0;[\s\S]*?inline-size: 100%;[\s\S]*?box-sizing: border-box;[\s\S]*?-webkit-appearance: none;/,
     'Expected date/time controls to override intrinsic WebView width.'
+  );
+
+  assert.match(
+    source,
+    /input\[type="date"\]::\-webkit-date-and-time-value,[\s\S]*?min-width: 0;[\s\S]*?text-align: left;/,
+    'Expected native date/time internals to be shrinkable in WebKit.'
+  );
+
+  assert.match(
+    source,
+    /input\[type="date"\]::\-webkit-textfield-decoration-container,[\s\S]*?display: flex;[\s\S]*?min-width: 0;/,
+    'Expected the native date/time decoration container to allow shrinking.'
   );
 
   assert.match(

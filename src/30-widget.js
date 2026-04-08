@@ -583,15 +583,44 @@ function renderDashboardHTML(appName, payloadJson) {
   .entry-card input[type="date"],
   .entry-card input[type="time"] {
     width: 100%;
+    width: -webkit-fill-available;
     max-width: 100%;
+    max-width: -webkit-fill-available;
     min-width: 0;
     min-inline-size: 0;
     inline-size: 100%;
+    max-inline-size: 100%;
     display: block;
     min-height: 40px;
     box-sizing: border-box;
     overflow: hidden;
     font: inherit;
+    -webkit-appearance: none;
+    appearance: none;
+    background-clip: padding-box;
+  }
+  .entry-card input[type="date"]::-webkit-date-and-time-value,
+  .entry-card input[type="time"]::-webkit-date-and-time-value {
+    min-width: 0;
+    text-align: left;
+  }
+  .entry-card input[type="date"]::-webkit-datetime-edit,
+  .entry-card input[type="time"]::-webkit-datetime-edit {
+    min-width: 0;
+    padding: 0;
+  }
+  .entry-card input[type="date"]::-webkit-textfield-decoration-container,
+  .entry-card input[type="time"]::-webkit-textfield-decoration-container {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    padding: 0;
+  }
+  .entry-card input[type="date"]::-webkit-calendar-picker-indicator,
+  .entry-card input[type="time"]::-webkit-calendar-picker-indicator {
+    margin: 0 0 0 8px;
+    padding: 0;
+    opacity: 0.82;
   }
   .entry-card textarea {
     min-height: 52px;

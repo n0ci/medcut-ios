@@ -77,8 +77,8 @@ Actions:
 ## Category file auto-discovery
 
 - MedCut auto-discovers files named `<category>.json` in both:
-   - `iCloud Drive/Scriptable/medications`
-   - `iCloud Drive/Scriptable/history`
+   - `iCloud Drive/Scriptable/MedCut/medications`
+   - `iCloud Drive/Scriptable/MedCut/history`
 - Example files:
    - `peptides.json`
    - `painkillers.json`

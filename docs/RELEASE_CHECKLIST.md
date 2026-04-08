@@ -9,12 +9,11 @@
 - [ ] Multi-compound dashboard and chart render correctly
 - [ ] Confidence labels and caveat language are present
 
-## 2) Schema and migration checks
+## 2) Schema checks
 
 - [ ] Current schema_version is 1 in the auto-created medications/*.json and history/*.json starter files
-- [ ] Legacy injection records with dose field are normalized to dose_mg
 - [ ] Invalid records are handled safely (no crash)
-- [ ] Migrated data writes back to the correct category files in iCloud Drive (medications + history)
+- [ ] Data writes back to the correct category files in iCloud Drive (MedCut/medications + MedCut/history)
 
 ## 3) Distribution checks
 
@@ -42,7 +41,7 @@
 
 Include:
 - onboarding or install-flow changes
-- schema changes and migration behavior
+- schema changes
 - UI/chart improvements
 - bug fixes
 - known limitations and confidence caveats

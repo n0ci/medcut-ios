@@ -3,6 +3,7 @@
 // This is a convenience visualization tool, not a medical device.
 
 const APP_NAME = "MedCut"
+const APP_DATA_DIR = "MedCut"
 const CATEGORY_DIR = "medications"
 const HISTORY_DIR = "history"
 const CATEGORY_FILE_SUFFIX = ".json"
@@ -23,8 +24,12 @@ const MODEL_CONFIDENCE = {
 
 const fm = FileManager.iCloud()
 
+function dataRootPath() {
+  return fm.joinPath(fm.documentsDirectory(), APP_DATA_DIR)
+}
+
 function filePath(fileName) {
-  return fm.joinPath(fm.documentsDirectory(), fileName)
+  return fm.joinPath(dataRootPath(), fileName)
 }
 
 function medicationsDirPath() {
@@ -214,6 +219,10 @@ function writeJson(pathValue, value) {
 }
 
 async function ensureDataFiles() {
+  if (!fm.fileExists(dataRootPath())) {
+    fm.createDirectory(dataRootPath(), true)
+  }
+
   if (!fm.fileExists(medicationsDirPath())) {
     fm.createDirectory(medicationsDirPath(), true)
   }
@@ -1063,10 +1072,37 @@ function renderDashboardHTML(appName, payloadJson) {
     background: rgba(255,255,255,0.04);
   }
   .chart-wrap {
+    position: relative;
     background: var(--panel);
     border: 1px solid var(--panel-border);
     border-radius: 18px;
     padding: 12px;
+  }
+  .plot-warning {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: min(90%, 560px);
+    border-radius: 14px;
+    border: 1px solid rgba(255, 194, 79, 0.45);
+    background: rgba(33, 23, 7, 0.86);
+    color: #ffd37a;
+    padding: 14px 16px;
+    text-align: center;
+    z-index: 2;
+    pointer-events: none;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  }
+  .plot-warning strong {
+    display: block;
+    font-size: 15px;
+    margin-bottom: 4px;
+  }
+  .plot-warning span {
+    display: block;
+    font-size: 12px;
+    color: #f6dfa8;
   }
   .empty {
     margin-top: 18px;
@@ -1147,6 +1183,7 @@ function renderDashboardHTML(appName, payloadJson) {
 
   <div class="chart-wrap">
     <canvas id="chart" width="1200" height="640"></canvas>
+    <div id="plot-warning" class="plot-warning" style="display:none"></div>
     <div class="legend" id="legend"></div>
   </div>
 
@@ -1216,14 +1253,22 @@ function renderDashboardHTML(appName, payloadJson) {
       const lastText = r.last ? (new Date(r.last.time).toLocaleString() + ' (' + Number(r.last.dose_mg).toFixed(2) + ' mg)') : 'No logged dose';
       const amount = Number(r.amount || 0).toFixed(2);
       const conc = Number(r.concentration || 0).toFixed(3);
+      const color = safeColor(r.color);
+      const badgeClass = safeBadgeClass(r.quality);
+      const displayName = escapeHtmlText(r.display_name);
+      const route = escapeHtmlText(r.route);
+      const category = escapeHtmlText(r.category);
+      const qualityLabel = escapeHtmlText(r.quality_label);
+      const safeLast = escapeHtmlText(lastText);
+      const safeNext = escapeHtmlText(nextText);
       return '<div class="card">'
-        + '<div class="name"><span class="dot" style="background:' + r.color + '"></span>' + r.display_name + '</div>'
+        + '<div class="name"><span class="dot" style="background:' + color + '"></span>' + displayName + '</div>'
         + '<div class="big">' + amount + ' mg</div>'
-        + '<div class="small">' + conc + ' mg/L • route: ' + r.route + '</div>'
-        + '<div class="small">Category: ' + r.category + '</div>'
-        + '<div class="small">Last: ' + lastText + '</div>'
-        + '<div class="small">Next: ' + nextText + '</div>'
-        + '<div class="badge ' + r.quality + '">' + r.quality_label + '</div>'
+        + '<div class="small">' + conc + ' mg/L • route: ' + route + '</div>'
+        + '<div class="small">Category: ' + category + '</div>'
+        + '<div class="small">Last: ' + safeLast + '</div>'
+        + '<div class="small">Next: ' + safeNext + '</div>'
+        + '<div class="badge ' + badgeClass + '">' + qualityLabel + '</div>'
         + '</div>';
     }).join('');
   }
@@ -1250,6 +1295,33 @@ function renderDashboardHTML(appName, payloadJson) {
     draw();
   }
 
+  function escapeSingleQuotedJs(value) {
+    return String(value)
+      .replace(/\\/g, '\\\\')
+      .replace(/'/g, "\\'")
+      .replace(/\r/g, '\\r')
+      .replace(/\n/g, '\\n');
+  }
+
+  function escapeHtmlText(value) {
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function safeColor(value) {
+    const s = String(value || '').trim();
+    return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(s) ? s : '#9fb1cc';
+  }
+
+  function safeBadgeClass(value) {
+    const v = String(value || '').toLowerCase();
+    return v === 'good' || v === 'rough' || v === 'low' ? v : 'rough';
+  }
+
   function buildLegend() {
     const root = document.getElementById('legend');
     const filtered = payload.compounds.filter(c => {
@@ -1260,9 +1332,12 @@ function renderDashboardHTML(appName, payloadJson) {
     });
     root.innerHTML = filtered.map(c => {
       const checked = state.enabled.includes(c.name) ? 'checked' : '';
-      return '<label><input type="checkbox" ' + checked + ' onchange="toggleCompound(\'' + c.name + '\')">'
-        + '<span class="dot" style="background:' + c.color + '"></span>'
-        + c.display_name + '</label>';
+      const safeName = escapeSingleQuotedJs(c.name);
+      const color = safeColor(c.color);
+      const displayName = escapeHtmlText(c.display_name);
+      return '<label><input type="checkbox" ' + checked + ' onchange="toggleCompound(\'' + safeName + '\')">'
+        + '<span class="dot" style="background:' + color + '"></span>'
+        + displayName + '</label>';
     }).join('');
   }
 
@@ -1271,6 +1346,7 @@ function renderDashboardHTML(appName, payloadJson) {
     buildLegend();
 
     const canvas = document.getElementById('chart');
+    const warning = document.getElementById('plot-warning');
     const ctx = canvas.getContext('2d');
     const W = canvas.width;
     const H = canvas.height;
@@ -1302,10 +1378,24 @@ function renderDashboardHTML(appName, payloadJson) {
       }))
       .filter(c => c.points.length > 1);
 
+    function setPlotWarning(title, detail) {
+      if (!title) {
+        warning.style.display = 'none';
+        while (warning.firstChild) warning.removeChild(warning.firstChild);
+        return;
+      }
+      while (warning.firstChild) warning.removeChild(warning.firstChild);
+      const strong = document.createElement('strong');
+      strong.textContent = title;
+      const span = document.createElement('span');
+      span.textContent = detail;
+      warning.appendChild(strong);
+      warning.appendChild(span);
+      warning.style.display = 'block';
+    }
+
     if (!enabled.length) {
-      ctx.fillStyle = '#9fb1cc';
-      ctx.font = '28px -apple-system';
-      ctx.fillText('No series for current filters', 80, 110);
+      setPlotWarning('No data available for this plot', 'Adjust filters or log an injection to generate chart data.');
       return;
     }
 
@@ -1315,14 +1405,11 @@ function renderDashboardHTML(appName, payloadJson) {
     });
 
     if (!hasDoseSignal) {
-      ctx.fillStyle = '#9fb1cc';
-      ctx.font = '28px -apple-system';
-      ctx.fillText('No dose events yet', 80, 110);
-      ctx.font = '22px -apple-system';
-      ctx.fillStyle = '#89a0c2';
-      ctx.fillText('Use Log Injection or Add Schedule to start plotting.', 80, 150);
+      setPlotWarning('No dose events yet', 'Use Log Injection or Add Schedule to start plotting.');
       return;
     }
+
+    setPlotWarning('', '');
 
     let yMax = 1;
     for (const s of enabled) {
@@ -1567,7 +1654,7 @@ async function showMenu(data) {
     info.title = "Data files"
     info.message = Object.keys(data.__files)
       .map(function(fileName) {
-        return `medications/${fileName}\nhistory/${fileName}`
+        return `MedCut/medications/${fileName}\nMedCut/history/${fileName}`
       })
       .join("\n")
     info.addAction("OK")

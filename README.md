@@ -121,8 +121,8 @@ MedCut accepts a Shortcut dictionary (or JSON string).
 
 Source of truth is split by concern:
 
-- Definitions: `iCloud Drive/Scriptable/medications/<category>.json`
-- History: `iCloud Drive/Scriptable/history/<category>.json`
+- Definitions: `iCloud Drive/Scriptable/MedCut/medications/<category>.json`
+- History: `iCloud Drive/Scriptable/MedCut/history/<category>.json`
 
 Medication definition file:
 - `schema_version`: 1

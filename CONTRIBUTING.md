@@ -32,5 +32,5 @@ Thanks for contributing.
 - Optimize for fast daily use on iPhone first
 - Keep advanced controls collapsed unless a task clearly benefits from always-visible complexity
 - Preserve Scriptable WebView constraints and mobile touch behavior
-- If you change dashboard structure or shortcut contracts, update `README.md` and `Shortcut_Setup.md`
+- If you change dashboard structure or shortcut contracts, update `README.md`, `Shortcut_Setup.md`, and `docs/shortcuts.json` when the official shortcut pack is affected
 - If you change CI or formatting expectations, update `.github/workflows/ci.yml`, `package.json`, and contributor docs together

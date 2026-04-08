@@ -64,3 +64,38 @@ test('repo ships seeded category templates including steroids', () => {
     'Expected starter medication library to seed multiple categories including steroids.'
   );
 });
+
+test('repo ships an official shortcut catalog and installer wiring', () => {
+  const shortcutCatalogPath = path.join(root, 'docs', 'shortcuts.json');
+  const officialShortcutsPath = path.join(root, 'docs', 'Official_Shortcuts.md');
+  const installerPath = path.join(root, 'Install_MedCut.js');
+
+  assert.ok(fs.existsSync(shortcutCatalogPath), 'Expected docs/shortcuts.json to exist.');
+  assert.ok(fs.existsSync(officialShortcutsPath), 'Expected docs/Official_Shortcuts.md to exist.');
+
+  const catalog = JSON.parse(fs.readFileSync(shortcutCatalogPath, 'utf8'));
+  const shortcutIds = Array.isArray(catalog.shortcuts) ? catalog.shortcuts.map(item => item.id) : [];
+
+  assert.deepEqual(
+    shortcutIds,
+    ['install_medcut', 'open_dashboard', 'quick_log', 'add_schedule'],
+    'Expected shortcut catalog to define the official core MedCut shortcut set.'
+  );
+
+  const installer = fs.readFileSync(installerPath, 'utf8');
+  assert.match(
+    installer,
+    /const SHORTCUT_CATALOG_URL = BASE \+ "docs\/shortcuts\.json"/,
+    'Expected installer to fetch the repo-tracked shortcut catalog.'
+  );
+  assert.match(
+    installer,
+    /const SHORTCUT_CATALOG_PAGE = "https:\/\/github\.com\/n0ci\/medcut-ios\/blob\/main\/docs\/Official_Shortcuts\.md"/,
+    'Expected installer to expose the public shortcut catalog page.'
+  );
+  assert.match(
+    installer,
+    /done\.addAction\("Shortcuts"\)/,
+    'Expected installer success prompt to offer the shortcut catalog.'
+  );
+});

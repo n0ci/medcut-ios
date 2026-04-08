@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "script_name": "MedCut",
+  "installer_script_name": "Install_MedCut",
+  "catalog_url": "https://github.com/n0ci/medcut-ios/blob/main/docs/Official_Shortcuts.md",
+  "shortcuts": [
+    {
+      "id": "install_medcut",
+      "name": "Install MedCut",
+      "kind": "installer",
+      "status": "unpublished",
+      "purpose": "Installs or updates MedCut in Scriptable and then points the user at the official shortcut pack.",
+      "script_name": "Install_MedCut",
+      "requires_scriptable": true,
+      "icloud_url": ""
+    },
+    {
+      "id": "open_dashboard",
+      "name": "Open Dashboard",
+      "kind": "core",
+      "status": "unpublished",
+      "purpose": "Opens the MedCut dashboard directly in Scriptable.",
+      "action": "dashboard",
+      "ui": "open",
+      "script_name": "MedCut",
+      "icloud_url": ""
+    },
+    {
+      "id": "quick_log",
+      "name": "Quick Log",
+      "kind": "core",
+      "status": "unpublished",
+      "purpose": "Logs one entry and returns to the updated dashboard.",
+      "action": "log",
+      "ui": "dashboard",
+      "script_name": "MedCut",
+      "icloud_url": ""
+    },
+    {
+      "id": "add_schedule",
+      "name": "Add Schedule",
+      "kind": "core",
+      "status": "unpublished",
+      "purpose": "Creates a recurring schedule and returns to the updated dashboard.",
+      "action": "add_protocol",
+      "ui": "dashboard",
+      "script_name": "MedCut",
+      "icloud_url": ""
+    }
+  ]
+}

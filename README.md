@@ -78,15 +78,17 @@ Apple Shortcuts / Scriptable UI
 
 Install Scriptable from the App Store.
 
-### 2. Add the installer script
+### 2. Run the MedCut installer
 
 Create a Scriptable script named `Install_MedCut` and paste in [Install_MedCut.js](Install_MedCut.js).
 
-That installer downloads the latest:
+That installer:
 
-- [MedCut.js](MedCut.js)
+- downloads the latest [MedCut.js](MedCut.js)
+- installs it into Scriptable as `MedCut`
+- offers the official shortcut catalog after install
 
-### 3. Run MedCut once
+### 3. Open MedCut once
 
 Open MedCut in Scriptable once so it can:
 
@@ -94,15 +96,21 @@ Open MedCut in Scriptable once so it can:
 - create the starter `medications/` files
 - create the starter `history/` files
 
-### 4. Optional: add Shortcuts
+### 4. Install the core shortcuts
 
-Shortcuts are optional, but they make daily use faster:
+The official shortcut catalog lives here:
 
-- quick log
-- open dashboard
-- add schedule
-- export backup
-- Siri and automation triggers
+- [Official Shortcuts](docs/Official_Shortcuts.md)
+- [Shortcut catalog manifest](docs/shortcuts.json)
+
+Core shortcuts:
+
+- `Install MedCut`
+- `Open Dashboard`
+- `Quick Log`
+- `Add Schedule`
+
+If published iCloud links are present in the catalog, `Install_MedCut.js` will offer them after install. If not, the installer opens the catalog page and the manual fallback remains available in [Shortcut_Setup.md](Shortcut_Setup.md).
 
 ### 5. Optional: add a widget
 
@@ -114,8 +122,22 @@ Raw files:
 
 - Installer: https://raw.githubusercontent.com/n0ci/medcut-ios/main/Install_MedCut.js
 - App bundle: https://raw.githubusercontent.com/n0ci/medcut-ios/main/MedCut.js
+- Shortcut catalog: https://raw.githubusercontent.com/n0ci/medcut-ios/main/docs/shortcuts.json
 
 The first launch creates starter `medications/` and `history/` files automatically.
+
+## Official Shortcuts
+
+The repo now has a tracked shortcut catalog that defines the official shortcut pack.
+
+Primary shortcuts:
+
+- `Install MedCut`: installs or updates the Scriptable app and points the user at the shortcut pack
+- `Open Dashboard`: opens the MedCut dashboard directly
+- `Quick Log`: logs one entry and returns to the updated dashboard
+- `Add Schedule`: creates a recurring schedule and returns to the updated dashboard
+
+Published iCloud links belong in [`docs/shortcuts.json`](/Users/noci/repo/peptide-tracker-ios/docs/shortcuts.json). Once those links are added, the installer and docs automatically point users into the official pack.
 
 ## Shortcut Input Contract
 
@@ -301,6 +323,8 @@ Scriptable widgets support optional `widgetParameter` modes:
 - `src/50-prompts.js`: shortcut action routing
 - `src/99-main.js`: Scriptable entrypoint
 - `scripts/build.js`: concatenates `src/` into `MedCut.js`
+- `docs/shortcuts.json`: official shortcut catalog manifest
+- `docs/Official_Shortcuts.md`: public shortcut pack page
 - `medications/`: starter definition templates
 - `history/`: starter history templates
 - `.github/workflows/ci.yml`: CI checks

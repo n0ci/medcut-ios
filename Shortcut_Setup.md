@@ -1,18 +1,23 @@
 # Shortcut Setup (Optional)
 
-This file is for maintainers and advanced users who want to build shortcuts manually.
+This file is the manual fallback for maintainers and advanced users who want to build shortcuts manually.
 
-Most users do not need shortcuts to install MedCut. Install first with [Install_MedCut.js](Install_MedCut.js), then optionally add shortcuts for faster daily use.
+The official shortcut pack is tracked in:
+
+- [docs/Official_Shortcuts.md](docs/Official_Shortcuts.md)
+- [docs/shortcuts.json](docs/shortcuts.json)
+
+Install first with [Install_MedCut.js](Install_MedCut.js). If published iCloud shortcut links exist in the catalog, the installer will offer them automatically. Use the instructions below when those links are not published yet or when you want to recreate the shortcuts manually.
 
 ## Optional shortcuts
 
-- Log Injection
-- Open Tracker
-- Add Protocol
-- Quick Log and reopen dashboard
+- Install MedCut (official published shortcut entry; not manually built here)
+- Open Dashboard
+- Quick Log
+- Add Schedule
 - Export Backup
 
-## 1) Log Injection shortcut
+## 1) Quick Log shortcut
 
 Goal: fast logging with a dictionary payload.
 
@@ -38,7 +43,7 @@ Actions:
 Optional fields:
 - notes: free text
 
-## 2) Open Tracker shortcut
+## 2) Open Dashboard shortcut
 
 Actions:
 1. Dictionary
@@ -47,7 +52,7 @@ Actions:
    - Script: MedCut
    - Input: Dictionary above
 
-## 3) Optional Add Protocol shortcut
+## 3) Add Schedule shortcut
 
 Actions:
 1. Choose from List (compound)
@@ -69,19 +74,7 @@ Actions:
    - Script: MedCut
    - Input: Dictionary above
 
-## 4) Edit or delete recent injections
-
-These are usually faster from the in-app history list because the dashboard already exposes inline Edit/Delete controls.
-
-If you need automation:
-- `edit_injection` requires `injection_id`, `compound`, `dose_mg`, and `time`
-- `delete_injection` requires `injection_id`
-- `edit_protocol` requires `protocol_id` plus the fields you want to update
-- `toggle_protocol` requires `protocol_id` and `enabled`
-- `delete_protocol` requires `protocol_id`
-- both can include `ui = dashboard` to return to the refreshed dashboard after the action
-
-## 5) Export backup shortcut
+## 4) Export backup shortcut
 
 Actions:
 1. Dictionary
@@ -92,6 +85,18 @@ Actions:
 3. Optional:
    - read the returned `backup_file`
    - move/share the exported JSON file as needed for archival
+
+## 5) Edit or delete recent injections
+
+These are usually faster from the in-app history list because the dashboard already exposes inline Edit/Delete controls.
+
+If you need automation:
+- `edit_injection` requires `injection_id`, `compound`, `dose_mg`, and `time`
+- `delete_injection` requires `injection_id`
+- `edit_protocol` requires `protocol_id` plus the fields you want to update
+- `toggle_protocol` requires `protocol_id` and `enabled`
+- `delete_protocol` requires `protocol_id`
+- both can include `ui = dashboard` to return to the refreshed dashboard after the action
 
 ## 6) JSON contract reminders
 

@@ -923,6 +923,25 @@ function buildDashboardPayload(data, rows) {
         next: r.next ? r.next.time : null
       }
     }),
+    injection_history: data.injections
+      .slice()
+      .sort(function(a, b) { return dt(b.time) - dt(a.time) })
+      .slice(0, 300)
+      .map(function(injection) {
+        const compound = data.compounds[injection.compound] || {}
+        return {
+          id: injection.id,
+          compound: injection.compound,
+          display_name: compound.display_name || titleCase(injection.compound),
+          category: compound.category || injection.category || DEFAULT_CATEGORY,
+          route: compound.route || "unknown",
+          quality: compound.model_quality || "rough",
+          dose_mg: toNumber(injection.dose_mg, 0),
+          time: injection.time,
+          source: injection.source || "log",
+          notes: injection.notes || ""
+        }
+      }),
     datasets: {
       amount_30: buildSeries(data, defaults, 30, 30, "amount"),
       amount_90: buildSeries(data, defaults, 90, 90, "amount"),
@@ -1030,17 +1049,17 @@ function renderDashboardHTML(appName, payloadJson) {
   .badge.good { color: var(--good); }
   .badge.rough { color: var(--rough); }
   .badge.low { color: var(--low); }
-  .toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin: 10px 0 12px;
-  }
   .quick-actions {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
     margin: 10px 0 12px;
+  }
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 8px 0 10px;
   }
   .pill, select {
     background: rgba(255,255,255,0.08);
@@ -1050,26 +1069,136 @@ function renderDashboardHTML(appName, payloadJson) {
     padding: 8px 12px;
     font-size: 13px;
   }
+  button.pill {
+    cursor: pointer;
+  }
+  .pill.active {
+    background: rgba(255,255,255,0.18);
+    border-color: rgba(255,255,255,0.28);
+  }
   a.pill {
     text-decoration: none;
     display: inline-block;
   }
-  .toggles {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin: 10px 0 12px;
+  .advanced-panel {
+    margin: 0 0 12px;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.03);
+    padding: 8px 10px;
+  }
+  .advanced-panel summary {
+    cursor: pointer;
     color: var(--muted);
     font-size: 12px;
+    list-style: none;
   }
-  .toggles label {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 10px;
+  .advanced-panel summary::-webkit-details-marker {
+    display: none;
+  }
+  .advanced-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .advanced-grid select {
+    width: 100%;
+  }
+  .entry-panels {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .entry-card {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 14px;
+    padding: 10px;
+  }
+  .entry-card h3 {
+    margin: 0 0 8px;
+    font-size: 14px;
+  }
+  .entry-card form {
+    display: grid;
+    gap: 8px;
+  }
+  .entry-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .entry-card input,
+  .entry-card textarea,
+  .entry-card select {
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 10px;
     border: 1px solid rgba(255,255,255,0.14);
-    border-radius: 999px;
-    background: rgba(255,255,255,0.04);
+    background: rgba(255,255,255,0.07);
+    color: #fff;
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  .entry-card textarea {
+    min-height: 52px;
+    resize: vertical;
+  }
+  .entry-note {
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .entry-status {
+    color: #f6dfa8;
+    font-size: 11px;
+  }
+  .history-panel {
+    margin-top: 12px;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 16px;
+    padding: 12px;
+  }
+  .history-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .history-head h2 {
+    margin: 0;
+    font-size: 14px;
+  }
+  .history-ranges {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .history-list {
+    display: grid;
+    gap: 8px;
+    max-height: 280px;
+    overflow: auto;
+  }
+  .history-item {
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 8px 10px;
+    background: rgba(255,255,255,0.03);
+  }
+  .history-item .top {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 12px;
+  }
+  .history-item .meta {
+    margin-top: 3px;
+    font-size: 11px;
+    color: var(--muted);
   }
   .chart-wrap {
     position: relative;
@@ -1077,6 +1206,20 @@ function renderDashboardHTML(appName, payloadJson) {
     border: 1px solid var(--panel-border);
     border-radius: 18px;
     padding: 12px;
+  }
+  .chart-tip {
+    position: absolute;
+    z-index: 3;
+    pointer-events: none;
+    border-radius: 10px;
+    background: rgba(7, 14, 25, 0.92);
+    border: 1px solid rgba(255,255,255,0.18);
+    color: #dbe8ff;
+    font-size: 11px;
+    padding: 6px 8px;
+    white-space: nowrap;
+    transform: translate(-50%, -120%);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
   }
   .plot-warning {
     position: absolute;
@@ -1140,6 +1283,9 @@ function renderDashboardHTML(appName, payloadJson) {
   }
   @media (max-width: 700px) {
     .cards { grid-template-columns: 1fr; }
+    .advanced-grid { grid-template-columns: 1fr; }
+    .entry-panels { grid-template-columns: 1fr; }
+    .entry-row { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -1150,42 +1296,98 @@ function renderDashboardHTML(appName, payloadJson) {
   <div class="cards" id="cards"></div>
 
   <div class="quick-actions">
-    <a class="pill" href="scriptable:///run/MedCut?action=prompt_log">Log Injection</a>
-    <a class="pill" href="scriptable:///run/MedCut?action=prompt_protocol">Add Schedule</a>
-    <a class="pill" href="scriptable:///run/MedCut?action=summary">Summary Output</a>
+    <button class="pill" type="button" onclick="focusEntry('log')">Log Injection</button>
+    <button class="pill" type="button" onclick="focusEntry('schedule')">Add Schedule</button>
   </div>
 
   <div class="toolbar">
-    <button class="pill" onclick="setWindow(30)">30d</button>
-    <button class="pill" onclick="setWindow(90)">90d</button>
-    <button class="pill" onclick="setWindow(180)">180d</button>
-    <button class="pill" onclick="setMode('amount')">Amount</button>
-    <button class="pill" onclick="setMode('concentration')">Concentration</button>
-    <select id="routeFilter" onchange="setRouteFilter(this.value)">
-      <option value="all">All routes</option>
-    </select>
-    <select id="qualityFilter" onchange="setQualityFilter(this.value)">
-      <option value="all">All confidence</option>
-      <option value="good">Higher confidence</option>
-      <option value="rough">Exploratory</option>
-      <option value="low">Low confidence</option>
-    </select>
-    <select id="categoryFilter" onchange="setCategoryFilter(this.value)">
-      <option value="all">All categories</option>
-    </select>
+    <button id="window-30" class="pill" onclick="setWindow(30)">30d</button>
+    <button id="window-90" class="pill" onclick="setWindow(90)">90d</button>
+    <button id="window-180" class="pill" onclick="setWindow(180)">180d</button>
+    <button id="mode-amount" class="pill" onclick="setMode('amount')">Amount</button>
+    <button id="mode-concentration" class="pill" onclick="setMode('concentration')">Concentration</button>
   </div>
 
-  <div class="toggles">
-    <label><input type="checkbox" checked onchange="toggleMarkers(this.checked)">Event markers</label>
-    <label><input type="checkbox" onchange="toggleTotal(this.checked)">Total overlay</label>
-    <label><input type="checkbox" onchange="toggleTrend(this.checked)">Trend overlay</label>
+  <details class="advanced-panel">
+    <summary>Advanced Filters and Chart Detail</summary>
+    <div class="advanced-grid">
+      <select id="routeFilter" onchange="setRouteFilter(this.value)">
+        <option value="all">All routes</option>
+      </select>
+      <select id="qualityFilter" onchange="setQualityFilter(this.value)">
+        <option value="all">All confidence</option>
+        <option value="good">Higher confidence</option>
+        <option value="rough">Exploratory</option>
+        <option value="low">Low confidence</option>
+      </select>
+      <select id="categoryFilter" onchange="setCategoryFilter(this.value)">
+        <option value="all">All categories</option>
+      </select>
+      <select id="chartDetail" onchange="setChartDetail(this.value)">
+        <option value="markers">Chart detail: Events</option>
+        <option value="minimal">Chart detail: Minimal</option>
+        <option value="insight">Chart detail: Events + Total</option>
+        <option value="full">Chart detail: Full</option>
+      </select>
+    </div>
+  </details>
+
+  <div class="entry-panels">
+    <div id="entry-log" class="entry-card">
+      <h3>Log Injection</h3>
+      <form onsubmit="submitLog(event)">
+        <select id="log-compound" required></select>
+        <div class="entry-row">
+          <input id="log-dose" type="number" min="0" step="0.01" placeholder="Dose mg" required>
+          <input id="log-date" type="date" required>
+        </div>
+        <input id="log-time" type="time" required>
+        <textarea id="log-notes" placeholder="Optional notes"></textarea>
+        <button class="pill" type="submit">Save Injection</button>
+      </form>
+      <div id="log-status" class="entry-status"></div>
+    </div>
+
+    <div id="entry-schedule" class="entry-card">
+      <h3>Add Schedule</h3>
+      <form onsubmit="submitSchedule(event)">
+        <select id="schedule-compound" required></select>
+        <div class="entry-row">
+          <input id="schedule-dose" type="number" min="0" step="0.01" placeholder="Dose mg" required>
+          <input id="schedule-every" type="number" min="0.25" step="0.25" placeholder="Every days" value="7" required>
+        </div>
+        <div class="entry-row">
+          <input id="schedule-start-date" type="date" required>
+          <input id="schedule-start-time" type="time" required>
+        </div>
+        <input id="schedule-occurrences" type="number" min="1" step="1" placeholder="Occurrences (optional)">
+        <textarea id="schedule-notes" placeholder="Optional notes"></textarea>
+        <button class="pill" type="submit">Save Schedule</button>
+      </form>
+      <div id="schedule-status" class="entry-status"></div>
+      <div class="entry-note">Saving writes to history and reopens the updated dashboard automatically.</div>
+    </div>
   </div>
 
   <div class="chart-wrap">
-    <canvas id="chart" width="1200" height="640"></canvas>
+    <canvas id="chart"></canvas>
     <div id="plot-warning" class="plot-warning" style="display:none"></div>
+    <div id="chart-tip" class="chart-tip" style="display:none"></div>
     <div class="legend" id="legend"></div>
   </div>
+
+  <section class="history-panel">
+    <div class="history-head">
+      <h2>Past Injections</h2>
+      <div class="history-ranges">
+        <button class="pill" id="history-7" type="button" onclick="setHistoryRange(7)">7d</button>
+        <button class="pill" id="history-30" type="button" onclick="setHistoryRange(30)">30d</button>
+        <button class="pill" id="history-90" type="button" onclick="setHistoryRange(90)">90d</button>
+        <button class="pill" id="history-all" type="button" onclick="setHistoryRange(0)">All</button>
+      </div>
+    </div>
+    <div id="history-list" class="history-list"></div>
+  </section>
 
   <div class="footer">Convenience visualization only. Values are model estimates and can be low-confidence for some compounds.</div>
 
@@ -1203,10 +1405,13 @@ function renderDashboardHTML(appName, payloadJson) {
     routeFilter: 'all',
     qualityFilter: 'all',
     categoryFilter: 'all',
+    historyDays: 30,
+    chartDetail: 'markers',
     showMarkers: true,
     showTotal: false,
     showTrend: false,
-    enabled: payload.datasets.amount_30.compounds.map(c => c.name)
+    enabled: payload.datasets.amount_30.compounds.map(c => c.name),
+    hoverX: null
   };
 
   const routeSet = new Set(payload.compounds.map(c => c.route || 'unknown'));
@@ -1226,6 +1431,44 @@ function renderDashboardHTML(appName, payloadJson) {
     opt.textContent = category;
     categorySelect.appendChild(opt);
   });
+
+  if (categorySet.size <= 1) {
+    categorySelect.style.display = 'none';
+  }
+
+  function fillCompoundSelect(selectId) {
+    const select = document.getElementById(selectId);
+    const compounds = payload.compounds.slice().sort((a, b) => {
+      return String(a.display_name || a.name).localeCompare(String(b.display_name || b.name));
+    });
+    select.innerHTML = '';
+    compounds.forEach(function(c) {
+      const opt = document.createElement('option');
+      opt.value = c.name;
+      opt.textContent = (c.display_name || c.name) + ' (' + (c.category || 'general') + ')';
+      select.appendChild(opt);
+    });
+  }
+
+  function setDefaultDateTimeInputs() {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const hh = String(now.getHours()).padStart(2, '0');
+    const min = String(now.getMinutes()).padStart(2, '0');
+    const dateValue = yyyy + '-' + mm + '-' + dd;
+    const timeValue = hh + ':' + min;
+
+    document.getElementById('log-date').value = dateValue;
+    document.getElementById('log-time').value = timeValue;
+    document.getElementById('schedule-start-date').value = dateValue;
+    document.getElementById('schedule-start-time').value = timeValue;
+  }
+
+  fillCompoundSelect('log-compound');
+  fillCompoundSelect('schedule-compound');
+  setDefaultDateTimeInputs();
 
   function hasRows() {
     return Array.isArray(payload.rows) && payload.rows.length > 0;
@@ -1249,8 +1492,8 @@ function renderDashboardHTML(appName, payloadJson) {
     });
 
     root.innerHTML = filteredRows.map(r => {
-      const nextText = r.next ? new Date(r.next).toLocaleString() : 'No schedule';
-      const lastText = r.last ? (new Date(r.last.time).toLocaleString() + ' (' + Number(r.last.dose_mg).toFixed(2) + ' mg)') : 'No logged dose';
+      const nextText = r.next ? relativeFromNow(r.next) : 'No schedule';
+      const lastText = r.last ? (relativeFromNow(r.last.time) + ' (' + Number(r.last.dose_mg).toFixed(2) + ' mg)') : 'No logged dose';
       const amount = Number(r.amount || 0).toFixed(2);
       const conc = Number(r.concentration || 0).toFixed(3);
       const color = safeColor(r.color);
@@ -1262,29 +1505,181 @@ function renderDashboardHTML(appName, payloadJson) {
       const safeLast = escapeHtmlText(lastText);
       const safeNext = escapeHtmlText(nextText);
       return '<div class="card">'
-        + '<div class="name"><span class="dot" style="background:' + color + '"></span>' + displayName + '</div>'
-        + '<div class="big">' + amount + ' mg</div>'
-        + '<div class="small">' + conc + ' mg/L • route: ' + route + '</div>'
-        + '<div class="small">Category: ' + category + '</div>'
-        + '<div class="small">Last: ' + safeLast + '</div>'
-        + '<div class="small">Next: ' + safeNext + '</div>'
-        + '<div class="badge ' + badgeClass + '">' + qualityLabel + '</div>'
+        + '<div class="name"><span class="dot" style="background:' + color + '"></span>' + displayName + ' <span class="badge ' + badgeClass + '">' + qualityLabel + '</span></div>'
+        + '<div class="big">' + amount + ' mg • ' + conc + ' mg/L</div>'
+        + '<div class="small">Last: ' + safeLast + ' • Next: ' + safeNext + '</div>'
+        + '<div class="small">Route: ' + route + ' • Category: ' + category + '</div>'
         + '</div>';
     }).join('');
+  }
+
+  function relativeFromNow(value) {
+    const t = new Date(value).getTime();
+    if (!Number.isFinite(t)) return 'Unknown';
+    const now = Date.now();
+    const diff = t - now;
+    const absMs = Math.abs(diff);
+    const minute = 60000;
+    const hour = 3600000;
+    const day = 86400000;
+
+    if (absMs < hour) {
+      const mins = Math.max(1, Math.round(absMs / minute));
+      return diff >= 0 ? ('in ' + mins + 'm') : (mins + 'm ago');
+    }
+    if (absMs < day * 2) {
+      const hours = Math.max(1, Math.round(absMs / hour));
+      return diff >= 0 ? ('in ' + hours + 'h') : (hours + 'h ago');
+    }
+    const days = Math.max(1, Math.round(absMs / day));
+    return diff >= 0 ? ('in ' + days + 'd') : (days + 'd ago');
   }
 
   function getSeries() {
     return payload.datasets[state.mode + '_' + state.days];
   }
 
-  function setWindow(days) { state.days = days; draw(); }
-  function setMode(mode) { state.mode = mode; draw(); }
-  function setRouteFilter(route) { state.routeFilter = route; draw(); }
-  function setQualityFilter(quality) { state.qualityFilter = quality; draw(); }
-  function setCategoryFilter(category) { state.categoryFilter = category; draw(); }
-  function toggleMarkers(checked) { state.showMarkers = checked; draw(); }
-  function toggleTotal(checked) { state.showTotal = checked; draw(); }
-  function toggleTrend(checked) { state.showTrend = checked; draw(); }
+  function setWindow(days) { state.days = days; draw(false); }
+  function setMode(mode) { state.mode = mode; draw(false); }
+  function setRouteFilter(route) { state.routeFilter = route; draw(false); }
+  function setQualityFilter(quality) { state.qualityFilter = quality; draw(false); }
+  function setCategoryFilter(category) { state.categoryFilter = category; draw(false); }
+
+  function setChartDetail(detail) {
+    state.chartDetail = detail;
+    if (detail === 'minimal') {
+      state.showMarkers = false;
+      state.showTotal = false;
+      state.showTrend = false;
+    } else if (detail === 'markers') {
+      state.showMarkers = true;
+      state.showTotal = false;
+      state.showTrend = false;
+    } else if (detail === 'insight') {
+      state.showMarkers = true;
+      state.showTotal = true;
+      state.showTrend = false;
+    } else {
+      state.showMarkers = true;
+      state.showTotal = true;
+      state.showTrend = true;
+    }
+    draw(false);
+  }
+
+  function setHistoryRange(days) {
+    state.historyDays = days;
+    draw(false);
+  }
+
+  function updateActiveControls() {
+    ['30', '90', '180'].forEach(function(days) {
+      const el = document.getElementById('window-' + days);
+      if (!el) return;
+      el.classList.toggle('active', state.days === Number(days));
+    });
+    const amount = document.getElementById('mode-amount');
+    const concentration = document.getElementById('mode-concentration');
+    if (amount) amount.classList.toggle('active', state.mode === 'amount');
+    if (concentration) concentration.classList.toggle('active', state.mode === 'concentration');
+
+    const ranges = [7, 30, 90, 0];
+    ranges.forEach(function(days) {
+      const id = days === 0 ? 'history-all' : ('history-' + days);
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.toggle('active', state.historyDays === days);
+    });
+
+    const detail = document.getElementById('chartDetail');
+    if (detail && detail.value !== state.chartDetail) detail.value = state.chartDetail;
+  }
+
+  function focusEntry(kind) {
+    const target = kind === 'schedule' ? document.getElementById('entry-schedule') : document.getElementById('entry-log');
+    if (!target) return;
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function setFormStatus(id, message) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = message;
+  }
+
+  function buildRunUrl(params) {
+    const parts = Object.keys(params)
+      .filter(function(key) { return params[key] != null && String(params[key]) !== ''; })
+      .map(function(key) {
+        return encodeURIComponent(key) + '=' + encodeURIComponent(String(params[key]));
+      });
+    return 'scriptable:///run/MedCut?' + parts.join('&');
+  }
+
+  function submitLog(event) {
+    event.preventDefault();
+    const compound = document.getElementById('log-compound').value;
+    const dose = Number(document.getElementById('log-dose').value);
+    const date = document.getElementById('log-date').value;
+    const time = document.getElementById('log-time').value;
+    const notes = document.getElementById('log-notes').value.trim();
+
+    if (!(dose > 0)) {
+      setFormStatus('log-status', 'Dose must be greater than 0.');
+      return;
+    }
+
+    const at = new Date(date + 'T' + time);
+    if (!Number.isFinite(at.getTime())) {
+      setFormStatus('log-status', 'Please provide a valid date and time.');
+      return;
+    }
+
+    const url = buildRunUrl({
+      action: 'log',
+      ui: 'dashboard',
+      compound: compound,
+      dose_mg: dose,
+      time: at.toISOString(),
+      notes: notes
+    });
+    setFormStatus('log-status', 'Opening MedCut to save injection...');
+    window.location.href = url;
+  }
+
+  function submitSchedule(event) {
+    event.preventDefault();
+    const compound = document.getElementById('schedule-compound').value;
+    const dose = Number(document.getElementById('schedule-dose').value);
+    const every = Number(document.getElementById('schedule-every').value);
+    const date = document.getElementById('schedule-start-date').value;
+    const time = document.getElementById('schedule-start-time').value;
+    const occurrences = document.getElementById('schedule-occurrences').value.trim();
+    const notes = document.getElementById('schedule-notes').value.trim();
+
+    if (!(dose > 0) || !(every > 0)) {
+      setFormStatus('schedule-status', 'Dose and interval must be greater than 0.');
+      return;
+    }
+
+    const start = new Date(date + 'T' + time);
+    if (!Number.isFinite(start.getTime())) {
+      setFormStatus('schedule-status', 'Please provide a valid start date and time.');
+      return;
+    }
+
+    const url = buildRunUrl({
+      action: 'add_protocol',
+      ui: 'dashboard',
+      compound: compound,
+      dose_mg: dose,
+      every_days: every,
+      start: start.toISOString(),
+      occurrences: occurrences,
+      notes: notes
+    });
+    setFormStatus('schedule-status', 'Opening MedCut to save schedule...');
+    window.location.href = url;
+  }
 
   function toggleCompound(name) {
     if (state.enabled.includes(name)) {
@@ -1292,7 +1687,7 @@ function renderDashboardHTML(appName, payloadJson) {
     } else {
       state.enabled.push(name);
     }
-    draw();
+    draw(false);
   }
 
   function escapeHtmlText(value) {
@@ -1340,15 +1735,61 @@ function renderDashboardHTML(appName, payloadJson) {
     });
   }
 
-  function draw() {
-    renderCards();
-    buildLegend();
+  function renderHistory() {
+    const list = document.getElementById('history-list');
+    const now = Date.now();
+    const cutoff = state.historyDays > 0 ? (now - state.historyDays * 86400000) : null;
+
+    const filtered = (payload.injection_history || []).filter(function(item) {
+      const t = new Date(item.time).getTime();
+      if (!Number.isFinite(t)) return false;
+      if (cutoff != null && t < cutoff) return false;
+      const routeOk = state.routeFilter === 'all' || item.route === state.routeFilter;
+      const qualityOk = state.qualityFilter === 'all' || item.quality === state.qualityFilter;
+      const categoryOk = state.categoryFilter === 'all' || item.category === state.categoryFilter;
+      return routeOk && qualityOk && categoryOk;
+    });
+
+    if (!filtered.length) {
+      list.innerHTML = '<div class="entry-note">No past injections for current filters and range.</div>';
+      return;
+    }
+
+    list.innerHTML = filtered.map(function(item) {
+      const dose = Number(item.dose_mg || 0).toFixed(2);
+      const whenAbs = new Date(item.time).toLocaleString();
+      const whenRel = relativeFromNow(item.time);
+      const display = escapeHtmlText(item.display_name || item.compound);
+      const category = escapeHtmlText(item.category || 'general');
+      const route = escapeHtmlText(item.route || 'unknown');
+      const source = escapeHtmlText(item.source || 'log');
+      const notes = item.notes ? (' • Notes: ' + escapeHtmlText(item.notes)) : '';
+      return '<div class="history-item">'
+        + '<div class="top"><strong>' + display + '</strong><span>' + dose + ' mg</span></div>'
+        + '<div class="meta">' + whenRel + ' • ' + whenAbs + '</div>'
+        + '<div class="meta">' + category + ' • ' + route + ' • ' + source + notes + '</div>'
+        + '</div>';
+    }).join('');
+  }
+
+  function draw(chartOnly) {
+    if (!chartOnly) {
+      renderCards();
+      buildLegend();
+      renderHistory();
+      updateActiveControls();
+    }
 
     const canvas = document.getElementById('chart');
     const warning = document.getElementById('plot-warning');
+    const tip = document.getElementById('chart-tip');
     const ctx = canvas.getContext('2d');
-    const W = canvas.width;
-    const H = canvas.height;
+    const W = Math.max(320, Math.floor(canvas.clientWidth || 320));
+    const H = Math.max(240, Math.floor(W * 0.54));
+    if (canvas.width !== W || canvas.height !== H) {
+      canvas.width = W;
+      canvas.height = H;
+    }
     ctx.clearRect(0, 0, W, H);
 
     const bg = ctx.createLinearGradient(0, 0, 0, H);
@@ -1381,6 +1822,7 @@ function renderDashboardHTML(appName, payloadJson) {
       if (!title) {
         warning.style.display = 'none';
         while (warning.firstChild) warning.removeChild(warning.firstChild);
+        tip.style.display = 'none';
         return;
       }
       while (warning.firstChild) warning.removeChild(warning.firstChild);
@@ -1546,9 +1988,92 @@ function renderDashboardHTML(appName, payloadJson) {
       ctx.stroke();
       ctx.setLineDash([]);
     }
+
+    if (state.hoverX != null) {
+      const clampedX = Math.max(padding.left, Math.min(W - padding.right, state.hoverX));
+      const ratio = (clampedX - padding.left) / Math.max(1, plotW);
+      const targetT = minT + ratio * (maxT - minT);
+
+      let nearestIndex = 0;
+      let bestDiff = Number.POSITIVE_INFINITY;
+      const refPoints = enabled[0].points;
+      for (let i = 0; i < refPoints.length; i++) {
+        const diff = Math.abs(refPoints[i][0] - targetT);
+        if (diff < bestDiff) {
+          bestDiff = diff;
+          nearestIndex = i;
+        }
+      }
+
+      const nearestT = refPoints[nearestIndex][0];
+      const nearestX = padding.left + ((nearestT - minT) / Math.max(1, (maxT - minT))) * plotW;
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(nearestX, padding.top);
+      ctx.lineTo(nearestX, padding.top + plotH);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      let totalAtPoint = 0;
+      for (const s of enabled) {
+        const idx = Math.min(nearestIndex, s.points.length - 1);
+        totalAtPoint += Number(s.points[idx][1] || 0);
+      }
+
+      const unit = state.mode === 'concentration' ? 'mg/L' : 'mg';
+      const dateLabel = new Date(nearestT).toLocaleString(undefined, {
+        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+      const value = totalAtPoint.toFixed(state.mode === 'concentration' ? 3 : 2);
+
+      tip.textContent = dateLabel + ' • Total: ' + value + ' ' + unit;
+      tip.style.display = 'block';
+      tip.style.left = nearestX + 'px';
+      tip.style.top = (padding.top + 10) + 'px';
+    } else {
+      tip.style.display = 'none';
+    }
   }
 
-  draw();
+  function updateHoverFromClientX(clientX) {
+    const canvas = document.getElementById('chart');
+    const rect = canvas.getBoundingClientRect();
+    state.hoverX = clientX - rect.left;
+    draw(true);
+  }
+
+  function clearHover() {
+    state.hoverX = null;
+    draw(true);
+  }
+
+  const canvas = document.getElementById('chart');
+  canvas.addEventListener('mousemove', function(e) {
+    updateHoverFromClientX(e.clientX);
+  });
+  canvas.addEventListener('mouseleave', function() {
+    clearHover();
+  });
+  canvas.addEventListener('touchstart', function(e) {
+    if (!e.touches || !e.touches.length) return;
+    updateHoverFromClientX(e.touches[0].clientX);
+  }, { passive: true });
+  canvas.addEventListener('touchmove', function(e) {
+    if (!e.touches || !e.touches.length) return;
+    updateHoverFromClientX(e.touches[0].clientX);
+  }, { passive: true });
+  canvas.addEventListener('touchend', function() {
+    clearHover();
+  }, { passive: true });
+
+  window.addEventListener('resize', function() {
+    draw(false);
+  });
+
+  draw(false);
 </script>
 </body>
 </html>`
@@ -1676,6 +2201,8 @@ function allHistoryFilePaths(data) {
 
 async function handleShortcut(data, input) {
   const action = String(input.action || "dashboard").toLowerCase()
+  const uiMode = String(input.ui || "").toLowerCase()
+  const returnDashboard = uiMode === "dashboard" || uiMode === "open"
 
   if (action === "prompt_log") {
     await promptLogInjection(data)
@@ -1700,6 +2227,10 @@ async function handleShortcut(data, input) {
     const c = data.compounds[compound]
 
     addInjection(data, compound, dose, time, input.notes || "")
+    if (returnDashboard) {
+      await presentDashboard(data)
+      return
+    }
     shortcutOutput({
       ok: true,
       action: "log",
@@ -1717,6 +2248,10 @@ async function handleShortcut(data, input) {
 
   if (action === "add_protocol") {
     addProtocolEntry(data, input)
+    if (returnDashboard) {
+      await presentDashboard(data)
+      return
+    }
     shortcutOutput({
       ok: true,
       action: "add_protocol",

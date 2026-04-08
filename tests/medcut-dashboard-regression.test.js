@@ -79,3 +79,83 @@ test('draw() still surfaces no-data warning states', () => {
     'Expected explicit warning when no dose signal exists.'
   );
 });
+
+test('dashboard exposes collapsible advanced controls and chart detail preset', () => {
+  assert.match(
+    source,
+    /<details class="advanced-panel">/,
+    'Expected advanced controls to be collapsed by default.'
+  );
+
+  assert.match(
+    source,
+    /<select id="chartDetail" onchange="setChartDetail\(this.value\)">/,
+    'Expected a single chart detail preset control.'
+  );
+});
+
+test('dashboard includes in-app forms for injection logging and schedule creation', () => {
+  assert.match(
+    source,
+    /<form onsubmit="submitLog\(event\)">/,
+    'Expected inline log injection form.'
+  );
+
+  assert.match(
+    source,
+    /<form onsubmit="submitSchedule\(event\)">/,
+    'Expected inline schedule form.'
+  );
+
+  assert.match(
+    source,
+    /action:\s*'log'/,
+    'Expected log form submission to route through log action payload.'
+  );
+
+  assert.match(
+    source,
+    /ui:\s*'dashboard'/,
+    'Expected inline form submissions to request dashboard return mode.'
+  );
+
+  assert.match(
+    source,
+    /action:\s*'add_protocol'/,
+    'Expected schedule form submission to route through add_protocol action payload.'
+  );
+});
+
+test('shortcut handler supports dashboard-return mode for form actions', () => {
+  assert.match(
+    source,
+    /const returnDashboard = uiMode === "dashboard" \|\| uiMode === "open"/,
+    'Expected shared dashboard-return mode parsing.'
+  );
+
+  assert.match(
+    source,
+    /if \(returnDashboard\) \{\s*await presentDashboard\(data\)\s*return\s*\}/,
+    'Expected log/add_protocol actions to reopen dashboard in return mode.'
+  );
+});
+
+test('dashboard includes past injections history panel', () => {
+  assert.match(
+    source,
+    /<section class="history-panel">/,
+    'Expected a dedicated past injections panel in dashboard.'
+  );
+
+  assert.match(
+    source,
+    /id="history-list" class="history-list"/,
+    'Expected history list container for rendered past injections.'
+  );
+
+  assert.match(
+    source,
+    /function renderHistory\(\)/,
+    'Expected renderHistory function for view-only injection history.'
+  );
+});

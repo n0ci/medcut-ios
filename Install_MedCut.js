@@ -1,7 +1,7 @@
 // Paste this once in Scriptable as: Install_MedCut
 
 const BASE = "https://raw.githubusercontent.com/n0ci/medcut-ios/main/"
-const FILES = ["MedCut.js", "MedCutDashboard.js"]
+const FILES = ["MedCut.js"]
 const fm = FileManager.iCloud()
 
 try {

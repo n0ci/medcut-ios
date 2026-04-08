@@ -20,12 +20,11 @@
 
 - [ ] Bootstrap helper points to latest Install_MedCut.js
 - [ ] Raw script URL points to latest MedCut.js
-- [ ] Raw script URL points to latest MedCutDashboard.js
 - [ ] README links updated with current public shortcut URLs
 
 ## 4) Shortcut checks
 
-- [ ] Bootstrap helper installs MedCut.js and MedCutDashboard.js automatically
+- [ ] Bootstrap helper installs MedCut.js automatically
 - [ ] Install shortcut uses `scriptable:///run/Install_MedCut` (no pre-selected Scriptable script required)
 - [ ] Install MedCut shortcut runs end-to-end on a clean device
 - [ ] Log Injection shortcut logs a record successfully

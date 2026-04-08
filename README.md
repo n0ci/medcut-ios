@@ -31,9 +31,8 @@ Install Scriptable from the App Store.
 ### 2. Add one tiny installer script
 Create one script in Scriptable named `Install_MedCut` and paste [Install_MedCut.js](Install_MedCut.js).
 
-This installer downloads and installs both app scripts automatically:
+This installer downloads and installs the app automatically:
 - [MedCut.js](MedCut.js)
-- [MedCutDashboard.js](MedCutDashboard.js)
 
 You only paste once.
 
@@ -46,6 +45,8 @@ Shortcuts are optional and only for convenience/automation after install:
 - Quick open dashboard
 - Siri / automation triggers
 
+The dashboard now includes built-in quick actions (Log Injection, Add Schedule, Summary Output), so most users can stay inside one UI.
+
 ### 5. Optional widget
 Add a Scriptable widget and select MedCut.
 
@@ -54,7 +55,6 @@ Add a Scriptable widget and select MedCut.
 Raw files:
 - Bootstrap helper: https://raw.githubusercontent.com/n0ci/medcut-ios/main/Install_MedCut.js
 - Script URL: https://raw.githubusercontent.com/n0ci/medcut-ios/main/MedCut.js
-- Dashboard module URL: https://raw.githubusercontent.com/n0ci/medcut-ios/main/MedCutDashboard.js
 
 No manual data-file install is required. MedCut creates the starter `medications/` and `history/` files on first launch.
 
@@ -70,7 +70,6 @@ Shortcut role:
 
 Install behavior requirements:
 - Ensure script is created/updated in Scriptable as `MedCut`
-- Ensure dashboard module is created/updated in Scriptable as `MedCutDashboard`
 - Required naming for auto-created data files: `<category>.json` inside `medications/` and `history/` (example: `peptides.json`, `painkillers.json`)
 - If direct script install is blocked by iOS behavior, use fallback handoff (open raw script and share to Scriptable)
 
@@ -147,7 +146,6 @@ The script auto-discovers all `<category>.json` files across both folders and me
 
 - `Install_MedCut.js`: bootstrap installer that downloads the app scripts automatically
 - `MedCut.js`: main Scriptable app
-- `MedCutDashboard.js`: dashboard frontend module (WebView HTML/CSS/JS)
 - `medications/peptides.json`: category template (peptides)
 - `medications/painkillers.json`: category template (painkillers example)
 - `history/peptides.json`: starter history template (peptides)

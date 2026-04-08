@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "category": "steroids",
+  "compounds": {
+    "testosterone_cypionate": {
+      "display_name": "Testosterone Cypionate",
+      "half_life_days": 8.0,
+      "bioavailability": 1.0,
+      "vd_l": 75.0,
+      "route": "intramuscular_or_subcutaneous",
+      "model_quality": "rough",
+      "color": "#56CCF2",
+      "notes": "Depot ester estimate for convenience tracking; serum levels vary with carrier oil and injection cadence."
+    },
+    "testosterone_enanthate": {
+      "display_name": "Testosterone Enanthate",
+      "half_life_days": 4.5,
+      "bioavailability": 1.0,
+      "vd_l": 75.0,
+      "route": "intramuscular_or_subcutaneous",
+      "model_quality": "rough",
+      "color": "#6FCF97",
+      "notes": "Depot ester estimate for trend tracking only."
+    },
+    "nandrolone_decanoate": {
+      "display_name": "Nandrolone Decanoate",
+      "half_life_days": 7.0,
+      "bioavailability": 1.0,
+      "vd_l": 65.0,
+      "route": "intramuscular",
+      "model_quality": "rough",
+      "color": "#F2C94C",
+      "notes": "Long-acting depot estimate; useful mainly for rough accumulation/clearance visualization."
+    },
+    "methenolone_enanthate": {
+      "display_name": "Methenolone Enanthate",
+      "half_life_days": 10.5,
+      "bioavailability": 1.0,
+      "vd_l": 80.0,
+      "route": "intramuscular",
+      "model_quality": "rough",
+      "color": "#BB6BD9",
+      "notes": "Approximate long-ester profile for convenience tracking."
+    },
+    "drostanolone_enanthate": {
+      "display_name": "Drostanolone Enanthate",
+      "half_life_days": 6.0,
+      "bioavailability": 1.0,
+      "vd_l": 80.0,
+      "route": "intramuscular",
+      "model_quality": "rough",
+      "color": "#2D9CDB",
+      "notes": "Approximate depot profile used for rough trend tracking."
+    },
+    "oxandrolone": {
+      "display_name": "Oxandrolone",
+      "half_life_days": 0.42,
+      "bioavailability": 0.97,
+      "vd_l": 65.0,
+      "route": "oral",
+      "model_quality": "rough",
+      "color": "#F2994A",
+      "notes": "Short oral steroid estimate; represented for convenience tracking rather than clinical interpretation."
+    },
+    "stanozolol": {
+      "display_name": "Stanozolol",
+      "half_life_days": 0.375,
+      "bioavailability": 0.95,
+      "vd_l": 65.0,
+      "route": "oral_or_intramuscular",
+      "model_quality": "rough",
+      "color": "#9B51E0",
+      "notes": "Route-dependent PK varies; simplified estimate for relative timing visualization."
+    }
+  }
+}

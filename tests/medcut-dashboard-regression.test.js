@@ -70,7 +70,7 @@ test('draw() still surfaces no-data warning states', () => {
   assert.match(
     source,
     /setPlotWarning\('No data available for this plot', buildNoDataWarningDetail\(\)\);/,
-    'Expected no-data warning to include filter-aware detail context.'
+    'Expected no-data warning to include explanatory detail context.'
   );
 
   assert.match(
@@ -80,39 +80,7 @@ test('draw() still surfaces no-data warning states', () => {
   );
 });
 
-test('dashboard exposes collapsible advanced controls and chart detail preset', () => {
-  assert.match(
-    source,
-    /<details class="advanced-panel">/,
-    'Expected advanced controls to be collapsed by default.'
-  );
-
-  assert.match(
-    source,
-    /<select id="chartDetail" onchange="setChartDetail\(this.value\)">/,
-    'Expected a single chart detail preset control.'
-  );
-
-  assert.match(
-    source,
-    /id="advanced-summary" class="advanced-summary"/,
-    'Expected advanced summary badge for active filter visibility.'
-  );
-
-  assert.match(
-    source,
-    /onclick="resetAdvancedControls\(\)"/,
-    'Expected quick reset action for advanced filters.'
-  );
-
-  assert.match(
-    source,
-    /<option value="markers">Events<\/option>/,
-    'Expected concise chart detail labels for faster scanning.'
-  );
-});
-
-test('advanced filters and chart detail preferences persist across dashboard opens', () => {
+test('dashboard keeps only essential graph controls and simple ui preferences', () => {
   assert.match(
     source,
     /const UI_PREFS_KEY = 'medcut\.dashboard\.ui\.v1';/,
@@ -128,19 +96,19 @@ test('advanced filters and chart detail preferences persist across dashboard ope
   assert.match(
     source,
     /localStorage\.setItem\(UI_PREFS_KEY, JSON\.stringify\(\{/,
-    'Expected preference save handler to persist advanced control state.'
+    'Expected preference save handler to persist lightweight dashboard state.'
+  );
+
+  assert.doesNotMatch(
+    source,
+    /advanced-panel|chartDetail|setRouteFilter|setQualityFilter|setCategoryFilter|setChartDetail|resetAdvancedControls/,
+    'Advanced control wiring should be removed from the simplified dashboard.'
   );
 
   assert.match(
     source,
-    /function setRouteFilter\(route\) \{ state\.routeFilter = route; saveUiPrefs\(\); resetHistoryPagination\(\); draw\(false\); \}/,
-    'Expected route filter changes to be persisted.'
-  );
-
-  assert.match(
-    source,
-    /function setChartDetail\(detail\) \{\s*applyChartDetailState\(detail\);\s*saveUiPrefs\(\);\s*draw\(false\);\s*\}/,
-    'Expected chart detail changes to be persisted.'
+    /id="focus-compound" class="focus-select" onchange="setFocusCompound\(this\.value\)"/,
+    'Expected the remaining visible graph control to be the focus selector.'
   );
 });
 
@@ -241,8 +209,20 @@ test('entry form controls are responsive and can shrink without overflow', () =>
 
   assert.match(
     source,
+    /\.entry-row\.compact-datetime \{\s*grid-template-columns: minmax\(0, 1\.15fr\) minmax\(0, 0\.85fr\);/,
+    'Expected compact datetime rows so date and time controls do not waste horizontal space.'
+  );
+
+  assert.match(
+    source,
     /\.entry-card input,[\s\S]*?max-width: 100%;[\s\S]*?min-width: 0;/,
     'Expected entry inputs to be width-constrained and shrinkable in narrow layouts.'
+  );
+
+  assert.match(
+    source,
+    /\.entry-card input\[type="date"\],[\s\S]*?min-inline-size: 0;[\s\S]*?inline-size: 100%;/,
+    'Expected date/time controls to override intrinsic WebView width.'
   );
 
   assert.match(

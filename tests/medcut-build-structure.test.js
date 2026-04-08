@@ -39,3 +39,28 @@ test('source tree is sectioned and the generated bundle advertises its origin', 
     'Expected built bundle banner describing the generated artifact.'
   );
 });
+
+test('repo ships seeded category templates including steroids', () => {
+  const requiredFiles = [
+    path.join(root, 'medications', 'peptides.json'),
+    path.join(root, 'medications', 'painkillers.json'),
+    path.join(root, 'medications', 'antidepressants.json'),
+    path.join(root, 'medications', 'small_molecules.json'),
+    path.join(root, 'medications', 'steroids.json'),
+    path.join(root, 'history', 'peptides.json'),
+    path.join(root, 'history', 'painkillers.json'),
+    path.join(root, 'history', 'antidepressants.json'),
+    path.join(root, 'history', 'small_molecules.json'),
+    path.join(root, 'history', 'steroids.json')
+  ];
+
+  requiredFiles.forEach(filePath => {
+    assert.ok(fs.existsSync(filePath), `Expected starter file ${path.relative(root, filePath)} to exist.`);
+  });
+
+  assert.match(
+    fs.readFileSync(path.join(sourceDir, '00-config.js'), 'utf8'),
+    /const STARTER_MEDICATION_LIBRARY = \{[\s\S]*?steroids:/,
+    'Expected starter medication library to seed multiple categories including steroids.'
+  );
+});

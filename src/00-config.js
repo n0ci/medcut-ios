@@ -23,6 +23,435 @@ const MODEL_CONFIDENCE = {
   low: { label: "Low confidence", badge: "low" }
 }
 
+const STARTER_MEDICATION_LIBRARY = {
+  peptides: {
+    tirzepatide: {
+      display_name: "Tirzepatide",
+      half_life_days: 5.0,
+      bioavailability: 0.8,
+      vd_l: 9.7,
+      route: "subcutaneous",
+      model_quality: "good",
+      color: "#56CCF2"
+    },
+    retatrutide: {
+      display_name: "Retatrutide",
+      half_life_days: 6.0,
+      bioavailability: 1.0,
+      vd_l: 10.0,
+      route: "subcutaneous",
+      model_quality: "rough",
+      color: "#BB6BD9",
+      notes: "Half-life is reported publicly; bioavailability and Vd here are placeholders for tracking/forecasting."
+    },
+    semaglutide: {
+      display_name: "Semaglutide",
+      half_life_days: 7.0,
+      bioavailability: 0.89,
+      vd_l: 12.5,
+      route: "subcutaneous",
+      model_quality: "good",
+      color: "#6FCF97"
+    },
+    cagrilintide: {
+      display_name: "Cagrilintide",
+      half_life_days: 7.0,
+      bioavailability: 1.0,
+      vd_l: 10.0,
+      route: "subcutaneous",
+      model_quality: "rough",
+      color: "#F2C94C",
+      notes: "Placeholder bioavailability/Vd."
+    },
+    tesamorelin: {
+      display_name: "Tesamorelin",
+      half_life_days: 0.0076,
+      bioavailability: 0.04,
+      vd_l: 336.0,
+      route: "subcutaneous",
+      model_quality: "rough",
+      color: "#F2994A"
+    },
+    cjc1295_dac: {
+      display_name: "CJC-1295 (DAC)",
+      half_life_days: 7.0,
+      bioavailability: 1.0,
+      vd_l: 10.0,
+      route: "subcutaneous",
+      model_quality: "rough",
+      color: "#2D9CDB",
+      notes: "Bioavailability/Vd are placeholders."
+    },
+    ipamorelin: {
+      display_name: "Ipamorelin",
+      half_life_days: 0.083,
+      bioavailability: 1.0,
+      vd_l: 10.0,
+      route: "subcutaneous",
+      model_quality: "rough",
+      color: "#27AE60",
+      notes: "Bioavailability/Vd are placeholders."
+    },
+    ghk_cu: {
+      display_name: "GHK-Cu",
+      half_life_days: 0.031,
+      bioavailability: 1.0,
+      vd_l: 10.0,
+      route: "topical_or_subcutaneous",
+      model_quality: "low",
+      color: "#E91E63",
+      notes: "Short plasma half-life; systemic concentration modeling is low-confidence, especially for topical use."
+    },
+    bpc157: {
+      display_name: "BPC-157",
+      half_life_days: 0.2,
+      bioavailability: 1.0,
+      vd_l: 10.0,
+      route: "subcutaneous_or_local",
+      model_quality: "low",
+      color: "#EB5757",
+      notes: "Heuristic placeholders; use mainly for logging and relative decay."
+    },
+    tb500: {
+      display_name: "TB-500",
+      half_life_days: 2.0,
+      bioavailability: 1.0,
+      vd_l: 10.0,
+      route: "subcutaneous_or_intramuscular",
+      model_quality: "low",
+      color: "#9B51E0",
+      notes: "Heuristic placeholders; use mainly for logging and relative decay."
+    },
+    aod9604: {
+      display_name: "AOD-9604",
+      half_life_days: 0.06,
+      bioavailability: 1.0,
+      vd_l: 10.0,
+      route: "subcutaneous",
+      model_quality: "low",
+      color: "#7ED321",
+      notes: "Short-lived peptide estimate; parameters are placeholders for convenience tracking."
+    },
+    epitalon: {
+      display_name: "Epitalon",
+      half_life_days: 0.12,
+      bioavailability: 1.0,
+      vd_l: 10.0,
+      route: "subcutaneous_or_intranasal",
+      model_quality: "low",
+      color: "#50E3C2",
+      notes: "Limited human PK references; modeled as low-confidence tracking estimate."
+    },
+    selank: {
+      display_name: "Selank",
+      half_life_days: 0.05,
+      bioavailability: 1.0,
+      vd_l: 10.0,
+      route: "intranasal_or_subcutaneous",
+      model_quality: "low",
+      color: "#4A90E2",
+      notes: "Approximate elimination only; useful mostly for dose/event logging."
+    },
+    ll37: {
+      display_name: "LL-37",
+      half_life_days: 0.08,
+      bioavailability: 1.0,
+      vd_l: 12.0,
+      route: "subcutaneous_or_local",
+      model_quality: "low",
+      color: "#D0021B",
+      notes: "PK behavior varies by use-case; represented as low-confidence placeholder values."
+    },
+    oxytocin: {
+      display_name: "Oxytocin",
+      half_life_days: 0.003,
+      bioavailability: 0.2,
+      vd_l: 18.0,
+      route: "intranasal_or_subcutaneous",
+      model_quality: "rough",
+      color: "#9013FE",
+      notes: "Very short systemic half-life; route-dependent effects can differ from plasma estimates."
+    }
+  },
+  painkillers: {
+    ibuprofen: {
+      display_name: "Ibuprofen",
+      half_life_days: 0.083,
+      bioavailability: 0.9,
+      vd_l: 12.0,
+      route: "oral",
+      model_quality: "rough",
+      color: "#F2994A",
+      notes: "Simple elimination estimate for convenience tracking."
+    },
+    acetaminophen: {
+      display_name: "Acetaminophen",
+      half_life_days: 0.104,
+      bioavailability: 0.85,
+      vd_l: 67.0,
+      route: "oral",
+      model_quality: "rough",
+      color: "#56CCF2",
+      notes: "Convenience estimate only."
+    },
+    naproxen: {
+      display_name: "Naproxen",
+      half_life_days: 0.58,
+      bioavailability: 0.95,
+      vd_l: 11.0,
+      route: "oral",
+      model_quality: "rough",
+      color: "#6FCF97",
+      notes: "Longer half-life NSAID represented with simplified one-compartment assumptions."
+    },
+    diclofenac: {
+      display_name: "Diclofenac",
+      half_life_days: 0.08,
+      bioavailability: 0.6,
+      vd_l: 14.0,
+      route: "oral_or_topical",
+      model_quality: "rough",
+      color: "#F2C94C",
+      notes: "Route-dependent exposure differs; useful mainly for relative tracking patterns."
+    },
+    celecoxib: {
+      display_name: "Celecoxib",
+      half_life_days: 0.46,
+      bioavailability: 0.4,
+      vd_l: 400.0,
+      route: "oral",
+      model_quality: "rough",
+      color: "#BB6BD9",
+      notes: "Approximate values; high apparent distribution and PK variability across users."
+    },
+    tramadol: {
+      display_name: "Tramadol",
+      half_life_days: 0.25,
+      bioavailability: 0.75,
+      vd_l: 190.0,
+      route: "oral",
+      model_quality: "rough",
+      color: "#2D9CDB",
+      notes: "Modeled as parent-compound only; active metabolite effects are not represented."
+    },
+    ketorolac: {
+      display_name: "Ketorolac",
+      half_life_days: 0.23,
+      bioavailability: 1.0,
+      vd_l: 13.0,
+      route: "oral_or_intramuscular",
+      model_quality: "rough",
+      color: "#27AE60",
+      notes: "Short-term analgesic profile modeled with simplified elimination assumptions."
+    }
+  },
+  antidepressants: {
+    sertraline: {
+      display_name: "Sertraline",
+      half_life_days: 1.1,
+      bioavailability: 0.45,
+      vd_l: 1400.0,
+      route: "oral",
+      model_quality: "rough",
+      color: "#56CCF2",
+      notes: "Approximate parent-compound profile for adherence-style trend tracking."
+    },
+    escitalopram: {
+      display_name: "Escitalopram",
+      half_life_days: 1.25,
+      bioavailability: 0.8,
+      vd_l: 880.0,
+      route: "oral",
+      model_quality: "rough",
+      color: "#6FCF97",
+      notes: "One-compartment simplification; individual variability can be high."
+    },
+    fluoxetine: {
+      display_name: "Fluoxetine",
+      half_life_days: 4.0,
+      bioavailability: 0.72,
+      vd_l: 1700.0,
+      route: "oral",
+      model_quality: "rough",
+      color: "#F2C94C",
+      notes: "Parent half-life used for convenience; long-lived metabolite is not separately modeled."
+    },
+    venlafaxine: {
+      display_name: "Venlafaxine",
+      half_life_days: 0.21,
+      bioavailability: 0.45,
+      vd_l: 500.0,
+      route: "oral",
+      model_quality: "rough",
+      color: "#EB5757",
+      notes: "Estimated profile for relative timing only; metabolite exposure is not explicitly separated."
+    },
+    bupropion: {
+      display_name: "Bupropion",
+      half_life_days: 0.88,
+      bioavailability: 0.85,
+      vd_l: 1250.0,
+      route: "oral",
+      model_quality: "rough",
+      color: "#BB6BD9",
+      notes: "Parent-focused estimate; active metabolite dynamics not explicitly modeled."
+    }
+  },
+  small_molecules: {
+    metformin: {
+      display_name: "Metformin",
+      half_life_days: 0.26,
+      bioavailability: 0.55,
+      vd_l: 654.0,
+      route: "oral",
+      model_quality: "rough",
+      color: "#56CCF2",
+      notes: "Convenience tracking estimate; simplified disposition model."
+    },
+    berberine: {
+      display_name: "Berberine",
+      half_life_days: 0.18,
+      bioavailability: 0.01,
+      vd_l: 120.0,
+      route: "oral",
+      model_quality: "low",
+      color: "#F2C94C",
+      notes: "Low and variable oral bioavailability; represented as low-confidence estimate."
+    },
+    tadalafil: {
+      display_name: "Tadalafil",
+      half_life_days: 0.73,
+      bioavailability: 0.8,
+      vd_l: 63.0,
+      route: "oral",
+      model_quality: "rough",
+      color: "#6FCF97",
+      notes: "Approximate one-compartment profile used for relative timing visualization."
+    },
+    naltrexone: {
+      display_name: "Naltrexone",
+      half_life_days: 0.17,
+      bioavailability: 0.35,
+      vd_l: 135.0,
+      route: "oral",
+      model_quality: "rough",
+      color: "#EB5757",
+      notes: "Parent-compound estimate only; active metabolite behavior not fully represented."
+    },
+    finasteride: {
+      display_name: "Finasteride",
+      half_life_days: 0.25,
+      bioavailability: 0.65,
+      vd_l: 76.0,
+      route: "oral",
+      model_quality: "rough",
+      color: "#9B51E0",
+      notes: "Simplified PK assumptions for convenience trend tracking."
+    }
+  },
+  steroids: {
+    testosterone_cypionate: {
+      display_name: "Testosterone Cypionate",
+      half_life_days: 8.0,
+      bioavailability: 1.0,
+      vd_l: 75.0,
+      route: "intramuscular_or_subcutaneous",
+      model_quality: "rough",
+      color: "#56CCF2",
+      notes: "Depot ester estimate for convenience tracking; serum levels vary with carrier oil and injection cadence."
+    },
+    testosterone_enanthate: {
+      display_name: "Testosterone Enanthate",
+      half_life_days: 4.5,
+      bioavailability: 1.0,
+      vd_l: 75.0,
+      route: "intramuscular_or_subcutaneous",
+      model_quality: "rough",
+      color: "#6FCF97",
+      notes: "Depot ester estimate for trend tracking only."
+    },
+    nandrolone_decanoate: {
+      display_name: "Nandrolone Decanoate",
+      half_life_days: 7.0,
+      bioavailability: 1.0,
+      vd_l: 65.0,
+      route: "intramuscular",
+      model_quality: "rough",
+      color: "#F2C94C",
+      notes: "Long-acting depot estimate; useful mainly for rough accumulation/clearance visualization."
+    },
+    methenolone_enanthate: {
+      display_name: "Methenolone Enanthate",
+      half_life_days: 10.5,
+      bioavailability: 1.0,
+      vd_l: 80.0,
+      route: "intramuscular",
+      model_quality: "rough",
+      color: "#BB6BD9",
+      notes: "Approximate long-ester profile for convenience tracking."
+    },
+    drostanolone_enanthate: {
+      display_name: "Drostanolone Enanthate",
+      half_life_days: 6.0,
+      bioavailability: 1.0,
+      vd_l: 80.0,
+      route: "intramuscular",
+      model_quality: "rough",
+      color: "#2D9CDB",
+      notes: "Approximate depot profile used for rough trend tracking."
+    },
+    oxandrolone: {
+      display_name: "Oxandrolone",
+      half_life_days: 0.42,
+      bioavailability: 0.97,
+      vd_l: 65.0,
+      route: "oral",
+      model_quality: "rough",
+      color: "#F2994A",
+      notes: "Short oral steroid estimate; represented for convenience tracking rather than clinical interpretation."
+    },
+    stanozolol: {
+      display_name: "Stanozolol",
+      half_life_days: 0.375,
+      bioavailability: 0.95,
+      vd_l: 65.0,
+      route: "oral_or_intramuscular",
+      model_quality: "rough",
+      color: "#9B51E0",
+      notes: "Route-dependent PK varies; simplified estimate for relative timing visualization."
+    }
+  }
+}
+
+const STARTER_HISTORY_LIBRARY = {
+  peptides: {
+    injections: [],
+    protocols: [
+      {
+        compound: "tirzepatide",
+        start: "2026-02-01T10:00:00.000Z",
+        dose_mg: 2.5,
+        every_days: 7,
+        occurrences: 6,
+        enabled: false,
+        notes: "Example starter phase"
+      },
+      {
+        compound: "tirzepatide",
+        start: "2026-03-15T10:00:00.000Z",
+        dose_mg: 3.75,
+        every_days: 7,
+        enabled: false,
+        notes: "Example escalation phase"
+      }
+    ]
+  },
+  painkillers: { injections: [], protocols: [] },
+  antidepressants: { injections: [], protocols: [] },
+  small_molecules: { injections: [], protocols: [] },
+  steroids: { injections: [], protocols: [] }
+}
+
 const fm = FileManager.iCloud()
 
 function dataRootPath() {
@@ -181,32 +610,23 @@ function makeId(prefix) {
 
 // ---------- Schema + storage ----------
 function buildStarterMedicationData(category) {
+  const normalizedCategory = normalizeCategoryName(category) || DEFAULT_CATEGORY
+  const compounds = STARTER_MEDICATION_LIBRARY[normalizedCategory] || STARTER_MEDICATION_LIBRARY[DEFAULT_CATEGORY]
   return {
     schema_version: SCHEMA_VERSION,
-    category: normalizeCategoryName(category) || DEFAULT_CATEGORY,
-    compounds: {
-      tirzepatide: {
-        display_name: "Tirzepatide",
-        half_life_days: 5.0,
-        bioavailability: 0.8,
-        vd_l: 9.7,
-        route: "subcutaneous",
-        model_quality: "good",
-        color: "#56CCF2",
-        notes: "Reference-like profile compared to many exploratory entries.",
-        provenance: "Seed preset",
-        references: []
-      }
-    }
+    category: normalizedCategory,
+    compounds: JSON.parse(JSON.stringify(compounds))
   }
 }
 
 function buildStarterHistoryData(category) {
+  const normalizedCategory = normalizeCategoryName(category) || DEFAULT_CATEGORY
+  const starter = STARTER_HISTORY_LIBRARY[normalizedCategory] || { injections: [], protocols: [] }
   return {
     schema_version: SCHEMA_VERSION,
-    category: normalizeCategoryName(category) || DEFAULT_CATEGORY,
-    injections: [],
-    protocols: []
+    category: normalizedCategory,
+    injections: JSON.parse(JSON.stringify(starter.injections || [])),
+    protocols: JSON.parse(JSON.stringify(starter.protocols || []))
   }
 }
 
@@ -248,10 +668,26 @@ async function ensureDataFiles() {
     fm.createDirectory(exportDirPath(), true)
   }
 
+  const starterCategories = Object.keys(STARTER_MEDICATION_LIBRARY)
   const medicationFiles = listCategoryFilesInDir(medicationsDirPath())
-  if (!medicationFiles.length) {
-    const starter = buildStarterMedicationData(DEFAULT_CATEGORY)
-    writeJson(categoryFilePath(makeCategoryFileName(DEFAULT_CATEGORY)), starter)
+  const historyFiles = listCategoryFilesInDir(historyDirPath())
+  const existingMedication = {}
+  const existingHistory = {}
+
+  medicationFiles.forEach(function(fileName) {
+    existingMedication[categoryFromFileName(fileName)] = true
+  })
+  historyFiles.forEach(function(fileName) {
+    existingHistory[categoryFromFileName(fileName)] = true
+  })
+
+  for (const category of starterCategories) {
+    if (!existingMedication[category]) {
+      writeJson(categoryFilePath(makeCategoryFileName(category)), buildStarterMedicationData(category))
+    }
+    if (!existingHistory[category]) {
+      writeJson(historyFilePath(makeCategoryFileName(category)), buildStarterHistoryData(category))
+    }
   }
 }
 

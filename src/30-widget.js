@@ -176,24 +176,24 @@ function renderDashboardHTML(appName, payloadJson) {
     font-size: 13px;
   }
   .hero {
-    padding: 16px 18px;
-    border-radius: 24px;
+    padding: 12px 14px;
+    border-radius: 18px;
     background: linear-gradient(180deg, rgba(11, 23, 38, 0.96), rgba(11, 24, 39, 0.84));
     border: 1px solid rgba(155, 196, 227, 0.14);
-    box-shadow: 0 18px 40px rgba(3, 8, 14, 0.34);
-    margin-bottom: 12px;
+    box-shadow: 0 14px 28px rgba(3, 8, 14, 0.28);
+    margin-bottom: 10px;
   }
   .hero-top {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     gap: 12px;
   }
   .hero-kicker {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     padding: 6px 10px;
     border-radius: 999px;
     background: var(--accent-soft);
@@ -206,32 +206,10 @@ function renderDashboardHTML(appName, payloadJson) {
     font-size: 12px;
     color: var(--muted-strong);
     text-align: right;
+    max-width: 360px;
   }
-  .overview-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
-    margin-top: 12px;
-  }
-  .overview-card {
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(163, 198, 226, 0.14);
-    border-radius: 16px;
-    padding: 11px 12px;
-  }
-  .overview-label {
-    color: var(--muted);
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-  }
-  .overview-value {
-    margin-top: 5px;
-    font-size: 22px;
-    font-weight: 750;
-  }
-  .overview-note {
-    margin-top: 4px;
+  .hero-meta {
+    margin-top: 8px;
     color: var(--muted);
     font-size: 12px;
   }
@@ -403,55 +381,6 @@ function renderDashboardHTML(appName, payloadJson) {
   .focus-select {
     min-width: 180px;
   }
-  .advanced-panel {
-    margin: 0;
-    border: 1px solid rgba(255,255,255,0.10);
-    border-radius: 16px;
-    background: rgba(255,255,255,0.025);
-    padding: 8px 10px;
-  }
-  .advanced-panel summary {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    cursor: pointer;
-    color: var(--muted);
-    font-size: 12px;
-    list-style: none;
-  }
-  .advanced-summary {
-    display: inline-block;
-    border-radius: 999px;
-    border: 1px solid rgba(255,255,255,0.14);
-    background: rgba(255,255,255,0.06);
-    color: #c8d9f5;
-    padding: 2px 8px;
-    font-size: 10px;
-    line-height: 1.4;
-  }
-  .advanced-summary.active {
-    border-color: rgba(95, 196, 255, 0.45);
-    background: rgba(55, 132, 182, 0.26);
-    color: #dff2ff;
-  }
-  .advanced-panel summary::-webkit-details-marker {
-    display: none;
-  }
-  .advanced-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    margin-top: 8px;
-  }
-  .advanced-grid select {
-    width: 100%;
-  }
-  .advanced-actions {
-    margin-top: 8px;
-    display: flex;
-    justify-content: flex-end;
-  }
   .action-rail {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -535,6 +464,9 @@ function renderDashboardHTML(appName, payloadJson) {
     grid-template-columns: 1fr 1fr;
     gap: 8px;
   }
+  .entry-row.compact-datetime {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  }
   .entry-row > * {
     min-width: 0;
   }
@@ -551,6 +483,12 @@ function renderDashboardHTML(appName, payloadJson) {
     color: #fff;
     padding: 8px 10px;
     font-size: 12px;
+  }
+  .entry-card input[type="date"],
+  .entry-card input[type="time"] {
+    min-inline-size: 0;
+    inline-size: 100%;
+    display: block;
   }
   .entry-card textarea {
     min-height: 52px;
@@ -727,19 +665,17 @@ function renderDashboardHTML(appName, payloadJson) {
     font-size: 12px;
   }
   @media (max-width: 980px) {
-    .overview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .action-rail { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   }
   @media (max-width: 700px) {
     .hero { padding: 16px; }
     .hero-top { flex-direction: column; }
     .cards { grid-template-columns: 1fr; }
-    .overview-grid { grid-template-columns: 1fr; }
     .action-rail { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .advanced-grid { grid-template-columns: 1fr; }
     .entry-row { grid-template-columns: 1fr; }
     .toolbar.secondary { align-items: stretch; }
     .focus-select { width: 100%; }
+    .hero-status { text-align: left; max-width: none; }
   }
 </style>
 </head>
@@ -754,7 +690,7 @@ function renderDashboardHTML(appName, payloadJson) {
         </div>
         <div id="hero-status" class="hero-status"></div>
       </div>
-      <div id="overview-grid" class="overview-grid"></div>
+      <div id="hero-meta" class="hero-meta"></div>
     </section>
 
     <div id="diagnostics-banner" class="diag-banner"></div>
@@ -789,33 +725,6 @@ function renderDashboardHTML(appName, payloadJson) {
         </select>
         <button id="refresh-dashboard" class="pill" type="button" onclick="refreshDashboard()">Refresh</button>
       </div>
-
-      <details class="advanced-panel">
-        <summary>Advanced Controls <span id="advanced-summary" class="advanced-summary">All data</span></summary>
-        <div class="advanced-grid">
-          <select id="routeFilter" onchange="setRouteFilter(this.value)">
-            <option value="all">All routes</option>
-          </select>
-          <select id="qualityFilter" onchange="setQualityFilter(this.value)">
-            <option value="all">All confidence</option>
-            <option value="good">Higher confidence</option>
-            <option value="rough">Exploratory</option>
-            <option value="low">Low confidence</option>
-          </select>
-          <select id="categoryFilter" onchange="setCategoryFilter(this.value)">
-            <option value="all">All categories</option>
-          </select>
-          <select id="chartDetail" onchange="setChartDetail(this.value)">
-            <option value="markers">Events</option>
-            <option value="minimal">Minimal</option>
-            <option value="insight">Events + Total</option>
-            <option value="full">Full</option>
-          </select>
-        </div>
-        <div class="advanced-actions">
-          <button class="pill" type="button" onclick="resetAdvancedControls()">Reset filters</button>
-        </div>
-      </details>
     </div>
 
     <div class="section-title">Actions</div>
@@ -840,11 +749,11 @@ function renderDashboardHTML(appName, payloadJson) {
           <form onsubmit="submitLog(event)">
             <select id="log-compound" required></select>
             <div id="recent-compounds" class="recent-compounds"></div>
-            <div class="entry-row">
-              <input id="log-dose" type="number" min="0" step="0.01" placeholder="Dose mg" required>
+            <input id="log-dose" type="number" min="0" step="0.01" placeholder="Dose mg" required>
+            <div class="entry-row compact-datetime">
               <input id="log-date" type="date" required>
+              <input id="log-time" type="time" required>
             </div>
-            <input id="log-time" type="time" required>
             <textarea id="log-notes" placeholder="Optional notes"></textarea>
             <div class="entry-actions">
               <button id="log-submit" class="pill" type="submit">Save Injection</button>
@@ -868,7 +777,7 @@ function renderDashboardHTML(appName, payloadJson) {
               <input id="schedule-dose" type="number" min="0" step="0.01" placeholder="Dose mg" required>
               <input id="schedule-every" type="number" min="0.25" step="0.25" placeholder="Every days" value="7" required>
             </div>
-            <div class="entry-row">
+            <div class="entry-row compact-datetime">
               <input id="schedule-start-date" type="date" required>
               <input id="schedule-start-time" type="time" required>
             </div>
@@ -933,12 +842,8 @@ function renderDashboardHTML(appName, payloadJson) {
   let state = {
     days: 7,
     mode: 'amount',
-    routeFilter: 'all',
-    qualityFilter: 'all',
-    categoryFilter: 'all',
     historyDays: 30,
     historyPage: 0,
-    chartDetail: 'markers',
     showMarkers: true,
     showTotal: false,
     showTrend: false,
@@ -956,28 +861,6 @@ function renderDashboardHTML(appName, payloadJson) {
   const HISTORY_PAGE_SIZE = 15;
   const UI_PREFS_KEY = 'medcut.dashboard.ui.v1';
   const PENDING_TOAST_KEY = 'medcut.dashboard.pendingToast.v1';
-
-  const routeSet = new Set(payload.compounds.map(c => c.route || 'unknown'));
-  const routeSelect = document.getElementById('routeFilter');
-  Array.from(routeSet).sort().forEach(route => {
-    const opt = document.createElement('option');
-    opt.value = route;
-    opt.textContent = route;
-    routeSelect.appendChild(opt);
-  });
-
-  const categorySet = new Set(payload.compounds.map(c => c.category || 'general'));
-  const categorySelect = document.getElementById('categoryFilter');
-  Array.from(categorySet).sort().forEach(category => {
-    const opt = document.createElement('option');
-    opt.value = category;
-    opt.textContent = category;
-    categorySelect.appendChild(opt);
-  });
-
-  if (categorySet.size <= 1) {
-    categorySelect.style.display = 'none';
-  }
 
   applySavedUiPrefs();
 
@@ -1074,21 +957,11 @@ function renderDashboardHTML(appName, payloadJson) {
   }
 
   function filteredRows() {
-    return payload.rows.filter(function(row) {
-      const routeOk = state.routeFilter === 'all' || row.route === state.routeFilter;
-      const qualityOk = state.qualityFilter === 'all' || row.quality === state.qualityFilter;
-      const categoryOk = state.categoryFilter === 'all' || row.category === state.categoryFilter;
-      return routeOk && qualityOk && categoryOk;
-    });
+    return payload.rows.slice();
   }
 
   function filteredCompounds() {
-    return payload.compounds.filter(function(compound) {
-      const routeOk = state.routeFilter === 'all' || compound.route === state.routeFilter;
-      const qualityOk = state.qualityFilter === 'all' || compound.quality === state.qualityFilter;
-      const categoryOk = state.categoryFilter === 'all' || compound.category === state.categoryFilter;
-      return routeOk && qualityOk && categoryOk;
-    });
+    return payload.compounds.slice();
   }
 
   function filteredHistoryItems() {
@@ -1098,54 +971,34 @@ function renderDashboardHTML(appName, payloadJson) {
       const t = new Date(item.time).getTime();
       if (!Number.isFinite(t)) return false;
       if (cutoff != null && t < cutoff) return false;
-      const routeOk = state.routeFilter === 'all' || item.route === state.routeFilter;
-      const qualityOk = state.qualityFilter === 'all' || item.quality === state.qualityFilter;
-      const categoryOk = state.categoryFilter === 'all' || item.category === state.categoryFilter;
-      return routeOk && qualityOk && categoryOk;
+      return true;
     });
   }
 
   function renderOverview() {
-    const root = document.getElementById('overview-grid');
+    const meta = document.getElementById('hero-meta');
     const status = document.getElementById('hero-status');
     const filtered = filteredRows();
     const nextDose = filtered
       .map(function(row) { return row.next ? new Date(row.next) : null; })
       .filter(function(value) { return value && Number.isFinite(value.getTime()); })
       .sort(function(a, b) { return a - b })[0] || null;
-    const items = [
-      {
-        label: 'Live compounds',
-        value: String(filtered.length),
-        note: filtered.length ? 'Matching current filters' : 'No matching compounds'
-      },
-      {
-        label: 'Next dose',
-        value: nextDose ? relativeFromNow(nextDose.toISOString()) : 'None',
-        note: nextDose ? nextDose.toLocaleString() : 'No enabled schedules'
-      },
-      {
-        label: 'Logs 7d',
-        value: String(payload.overview.recent_injection_count || 0),
-        note: String(payload.overview.enabled_schedule_count || 0) + ' active schedules'
-      }
-    ];
-
-    root.innerHTML = items.map(function(item) {
-      return '<div class="overview-card">'
-        + '<div class="overview-label">' + escapeHtmlText(item.label) + '</div>'
-        + '<div class="overview-value">' + escapeHtmlText(item.value) + '</div>'
-        + '<div class="overview-note">' + escapeHtmlText(item.note) + '</div>'
-        + '</div>';
-    }).join('');
+    if (meta) {
+      const parts = [
+        filtered.length + ' live compounds',
+        (payload.overview.recent_injection_count || 0) + ' logs in 7d',
+        (payload.overview.enabled_schedule_count || 0) + ' active schedules'
+      ];
+      if (nextDose) parts.push('next dose ' + relativeFromNow(nextDose.toISOString()));
+      meta.textContent = parts.join(' • ');
+    }
 
     if (!status) return;
-    const activeFilters = activeFilterDescriptions();
     const nextText = nextDose ? ('Next scheduled dose ' + relativeFromNow(nextDose.toISOString())) : 'No scheduled dose upcoming';
     const focusMeta = state.focusCompound
       ? (payload.compounds.find(function(item) { return item.name === state.focusCompound; }) || {}).display_name || state.focusCompound
       : 'All compounds';
-    const statusItems = ['Focus: ' + focusMeta].concat(activeFilters);
+    const statusItems = ['Focus: ' + focusMeta];
     statusItems.push(nextText);
     status.textContent = statusItems.join(' • ');
   }
@@ -1340,12 +1193,7 @@ function renderDashboardHTML(appName, payloadJson) {
   function renderSchedules() {
     const meta = document.getElementById('schedule-meta');
     const list = document.getElementById('schedule-list');
-    const items = (payload.protocols || []).filter(function(item) {
-      const routeOk = state.routeFilter === 'all' || item.route === state.routeFilter;
-      const qualityOk = state.qualityFilter === 'all' || item.quality === state.qualityFilter;
-      const categoryOk = state.categoryFilter === 'all' || item.category === state.categoryFilter;
-      return routeOk && qualityOk && categoryOk;
-    });
+    const items = (payload.protocols || []).slice();
 
     meta.textContent = items.length ? ('Showing ' + items.length + ' schedules') : 'No schedules for current filters';
     if (!items.length) {
@@ -1520,50 +1368,6 @@ function renderDashboardHTML(appName, payloadJson) {
     draw(false);
   }
   function setMode(mode) { state.mode = mode; draw(false); }
-  function setRouteFilter(route) { state.routeFilter = route; saveUiPrefs(); resetHistoryPagination(); draw(false); }
-  function setQualityFilter(quality) { state.qualityFilter = quality; saveUiPrefs(); resetHistoryPagination(); draw(false); }
-  function setCategoryFilter(category) { state.categoryFilter = category; saveUiPrefs(); resetHistoryPagination(); draw(false); }
-
-  function applyChartDetailState(detail) {
-    state.chartDetail = detail;
-    if (detail === 'minimal') {
-      state.showMarkers = false;
-      state.showTotal = false;
-      state.showTrend = false;
-      return;
-    }
-    if (detail === 'markers') {
-      state.showMarkers = true;
-      state.showTotal = false;
-      state.showTrend = false;
-      return;
-    }
-    if (detail === 'insight') {
-      state.showMarkers = true;
-      state.showTotal = true;
-      state.showTrend = false;
-      return;
-    }
-    state.showMarkers = true;
-    state.showTotal = true;
-    state.showTrend = true;
-  }
-
-  function setChartDetail(detail) {
-    applyChartDetailState(detail);
-    saveUiPrefs();
-    draw(false);
-  }
-
-  function resetAdvancedControls() {
-    state.routeFilter = 'all';
-    state.qualityFilter = 'all';
-    state.categoryFilter = 'all';
-    applyChartDetailState('markers');
-    saveUiPrefs();
-    resetHistoryPagination();
-    draw(false);
-  }
 
   function setHistoryRange(days) {
     state.historyDays = days;
@@ -1612,17 +1416,6 @@ function renderDashboardHTML(appName, payloadJson) {
       el.classList.toggle('active', state.historyDays === days);
     });
 
-    const detail = document.getElementById('chartDetail');
-    if (detail && detail.value !== state.chartDetail) detail.value = state.chartDetail;
-
-    const advancedSummary = document.getElementById('advanced-summary');
-    if (advancedSummary) {
-      const active = activeFilterDescriptions();
-      advancedSummary.textContent = active.length ? (active.length + ' active') : 'All data';
-      advancedSummary.title = active.length ? active.join(' | ') : 'No active filters';
-      advancedSummary.classList.toggle('active', active.length > 0);
-    }
-
     const custom = document.getElementById('custom-days');
     if (custom) custom.value = String(state.days);
 
@@ -1635,20 +1428,8 @@ function renderDashboardHTML(appName, payloadJson) {
     updateWorkspaceVisibility();
   }
 
-  function activeFilterDescriptions() {
-    const items = [];
-    if (state.routeFilter !== 'all') items.push('Route: ' + state.routeFilter);
-    if (state.qualityFilter !== 'all') items.push('Confidence: ' + state.qualityFilter);
-    if (state.categoryFilter !== 'all') items.push('Category: ' + state.categoryFilter);
-    return items;
-  }
-
   function buildNoDataWarningDetail() {
-    const active = activeFilterDescriptions();
-    if (!active.length) {
-      return 'Adjust filters or log an injection to generate chart data.';
-    }
-    return 'Current filters: ' + active.join(' • ') + '. Adjust filters or log an injection to generate chart data.';
+    return 'Log an injection or add a schedule to generate chart data.';
   }
 
   function applySavedUiPrefs() {
@@ -1659,22 +1440,7 @@ function renderDashboardHTML(appName, payloadJson) {
     } catch (error) {
       parsed = null;
     }
-    if (!parsed || typeof parsed !== 'object') {
-      applyChartDetailState(state.chartDetail);
-      return;
-    }
-
-    const route = typeof parsed.routeFilter === 'string' ? parsed.routeFilter : 'all';
-    state.routeFilter = route === 'all' || routeSet.has(route) ? route : 'all';
-
-    const quality = typeof parsed.qualityFilter === 'string' ? parsed.qualityFilter : 'all';
-    state.qualityFilter = quality === 'all' || quality === 'good' || quality === 'rough' || quality === 'low' ? quality : 'all';
-
-    const category = typeof parsed.categoryFilter === 'string' ? parsed.categoryFilter : 'all';
-    state.categoryFilter = category === 'all' || categorySet.has(category) ? category : 'all';
-
-    const detail = typeof parsed.chartDetail === 'string' ? parsed.chartDetail : 'markers';
-    applyChartDetailState(detail === 'markers' || detail === 'minimal' || detail === 'insight' || detail === 'full' ? detail : 'markers');
+    if (!parsed || typeof parsed !== 'object') return;
 
     const preferredCompound = typeof parsed.preferredCompound === 'string' ? parsed.preferredCompound : null;
     state.preferredCompound = preferredCompound && payload.compounds.some(function(compound) {
@@ -1690,10 +1456,6 @@ function renderDashboardHTML(appName, payloadJson) {
   function saveUiPrefs() {
     try {
       localStorage.setItem(UI_PREFS_KEY, JSON.stringify({
-        routeFilter: state.routeFilter,
-        qualityFilter: state.qualityFilter,
-        categoryFilter: state.categoryFilter,
-        chartDetail: state.chartDetail,
         preferredCompound: state.preferredCompound,
         focusCompound: state.focusCompound
       }));
@@ -2049,9 +1811,6 @@ function renderDashboardHTML(appName, payloadJson) {
     const enabled = source.compounds
       .filter(c => state.enabled.includes(c.name))
       .filter(c => !state.focusCompound || c.name === state.focusCompound)
-      .filter(c => state.routeFilter === 'all' || c.route === state.routeFilter)
-      .filter(c => state.qualityFilter === 'all' || c.model_quality === state.qualityFilter)
-      .filter(c => state.categoryFilter === 'all' || c.category === state.categoryFilter)
       .map(c => ({
         ...c,
         points: c.points.map(p => [new Date(p[0]).getTime(), p[1]])

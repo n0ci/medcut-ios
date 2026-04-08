@@ -218,10 +218,10 @@ Canonical-only note:
 
 The current dashboard is optimized for fast daily use inside Scriptable:
 
-- Overview header with high-level counts and next-schedule context
-- Quick action cards for jumping to log, schedule, graph, and history
+- Compact current-state header with focus/filter/next-dose context
+- Compact action rail below the graph for log, schedules, history, and export
+- Shared management workspace instead of always-open forms
 - Recent-compound shortcuts in Quick Log
-- Quick Log form expanded by default
 - Advanced controls collapsed by default
 - Inline history edit/delete actions
 - Inline schedule edit/pause/delete actions
@@ -239,6 +239,7 @@ The current dashboard is optimized for fast daily use inside Scriptable:
   - `medications/painkillers.json`
   - `medications/small_molecules.json`
   - `medications/antidepressants.json`
+  - `medications/steroids.json`
 
 ## Repo layout
 
@@ -258,10 +259,12 @@ The current dashboard is optimized for fast daily use inside Scriptable:
 - `medications/painkillers.json`: category template (painkillers example)
 - `medications/small_molecules.json`: category template (small molecules)
 - `medications/antidepressants.json`: category template (antidepressants)
+- `medications/steroids.json`: category template (steroids)
 - `history/peptides.json`: starter history template (peptides)
 - `history/painkillers.json`: starter history template (painkillers example)
 - `history/small_molecules.json`: starter history template (small molecules)
 - `history/antidepressants.json`: starter history template (antidepressants)
+- `history/steroids.json`: starter history template (steroids)
 - `Shortcut_Setup.md`: manual shortcut builder instructions
 
 ## Contributor notes

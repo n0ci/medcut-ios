@@ -2237,6 +2237,100 @@ function renderDashboardHTML(appName, payloadJson) {
   .picker-toolbar .field-stack {
     min-width: 0;
   }
+  .compound-native {
+    display: none;
+  }
+  .compound-picker {
+    gap: 8px;
+  }
+  .compound-current {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+    padding: 10px 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+  }
+  .compound-current-kicker {
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .compound-current-name {
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--text);
+    overflow-wrap: anywhere;
+  }
+  .compound-current-meta {
+    font-size: 11px;
+    color: var(--muted);
+    overflow-wrap: anywhere;
+  }
+  .compound-results-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .compound-results {
+    display: grid;
+    gap: 6px;
+    max-height: 220px;
+    overflow: auto;
+    min-width: 0;
+  }
+  .compound-option,
+  .compound-empty {
+    min-width: 0;
+    box-sizing: border-box;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04);
+  }
+  .compound-option {
+    width: 100%;
+    display: grid;
+    gap: 2px;
+    padding: 10px 12px;
+    text-align: left;
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+  }
+  .compound-option.active {
+    border-color: rgba(117, 197, 255, 0.34);
+    background: rgba(117, 197, 255, 0.14);
+    box-shadow: inset 0 0 0 1px rgba(117, 197, 255, 0.1);
+  }
+  .compound-option-name {
+    font-size: 13px;
+    font-weight: 650;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+  .compound-option-meta {
+    font-size: 11px;
+    color: var(--muted);
+    overflow-wrap: anywhere;
+  }
+  .compound-results-note {
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    padding: 4px 6px 0;
+  }
+  .compound-empty {
+    padding: 12px;
+    font-size: 12px;
+    color: var(--muted);
+  }
   .action-rail {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -2656,7 +2750,12 @@ function renderDashboardHTML(appName, payloadJson) {
               </div>
               <div class="field-stack">
                 <label class="field-label" for="log-compound">Substance</label>
-                <select id="log-compound" required></select>
+                <div class="compound-picker">
+                  <select id="log-compound" class="compound-native" required tabindex="-1" aria-hidden="true"></select>
+                  <div id="log-compound-current" class="compound-current" aria-live="polite"></div>
+                  <div id="log-compound-results-meta" class="compound-results-meta"></div>
+                  <div id="log-compound-results" class="compound-results"></div>
+                </div>
               </div>
             </div>
             <div id="recent-compounds" class="recent-compounds"></div>
@@ -2712,7 +2811,12 @@ function renderDashboardHTML(appName, payloadJson) {
               </div>
               <div class="field-stack">
                 <label class="field-label" for="schedule-compound">Substance</label>
-                <select id="schedule-compound" required></select>
+                <div class="compound-picker">
+                  <select id="schedule-compound" class="compound-native" required tabindex="-1" aria-hidden="true"></select>
+                  <div id="schedule-compound-current" class="compound-current" aria-live="polite"></div>
+                  <div id="schedule-compound-results-meta" class="compound-results-meta"></div>
+                  <div id="schedule-compound-results" class="compound-results"></div>
+                </div>
               </div>
             </div>
             <div class="entry-row">
@@ -2824,6 +2928,7 @@ function renderDashboardHTML(appName, payloadJson) {
     toastTimer: null
   };
   const HISTORY_PAGE_SIZE = 15;
+  const MAX_COMPOUND_MATCHES = 8;
   const UI_PREFS_KEY = 'medcut.dashboard.ui.v1';
   const PENDING_TOAST_KEY = 'medcut.dashboard.pendingToast.v1';
   const categoryOptions = (Array.isArray(payload.categories) && payload.categories.length
@@ -2836,6 +2941,20 @@ function renderDashboardHTML(appName, payloadJson) {
     });
 
   applySavedUiPrefs();
+
+  function findCompoundByName(name) {
+    return payload.compounds.find(function(item) {
+      return item.name === name;
+    }) || null;
+  }
+
+  function categoryLabelFor(category) {
+    const value = String(category || BROWSER_DEFAULT_CATEGORY);
+    const match = categoryOptions.find(function(option) {
+      return option.value === value;
+    });
+    return match ? match.label : value;
+  }
 
   function fillCategorySelect(selectId) {
     const select = document.getElementById(selectId);
@@ -2896,12 +3015,130 @@ function renderDashboardHTML(appName, payloadJson) {
     syncPickerInputs(kind);
   }
 
+  function renderCompoundPicker(kind, compounds) {
+    const select = document.getElementById(kind + '-compound');
+    const currentRoot = document.getElementById(kind + '-compound-current');
+    const metaRoot = document.getElementById(kind + '-compound-results-meta');
+    const resultsRoot = document.getElementById(kind + '-compound-results');
+    if (!select || !currentRoot || !metaRoot || !resultsRoot) return;
+
+    const allMatches = Array.isArray(compounds) ? compounds.slice() : compoundsForPicker(kind);
+    const currentName = String(select.value || '');
+    const currentCompound = findCompoundByName(currentName);
+    let visibleMatches = allMatches.slice(0, MAX_COMPOUND_MATCHES);
+
+    if (currentCompound && allMatches.some(function(item) { return item.name === currentCompound.name; }) &&
+        !visibleMatches.some(function(item) { return item.name === currentCompound.name; })) {
+      const seen = {};
+      visibleMatches = [currentCompound].concat(visibleMatches).filter(function(item) {
+        if (!item || seen[item.name]) return false;
+        seen[item.name] = true;
+        return true;
+      }).slice(0, MAX_COMPOUND_MATCHES);
+    }
+
+    currentRoot.innerHTML = '';
+    const currentKicker = document.createElement('div');
+    currentKicker.className = 'compound-current-kicker';
+    currentKicker.textContent = currentCompound ? 'Selected substance' : 'Choose a substance';
+    currentRoot.appendChild(currentKicker);
+
+    const currentNameNode = document.createElement('div');
+    currentNameNode.className = 'compound-current-name';
+    currentNameNode.textContent = currentCompound
+      ? String(currentCompound.display_name || currentCompound.name)
+      : 'No substance selected';
+    currentRoot.appendChild(currentNameNode);
+
+    const currentMeta = document.createElement('div');
+    currentMeta.className = 'compound-current-meta';
+    currentMeta.textContent = currentCompound
+      ? categoryLabelFor(currentCompound.category) + ' · ' + String(currentCompound.route || 'unknown')
+      : 'Filter by class or search, then tap a result below.';
+    currentRoot.appendChild(currentMeta);
+
+    metaRoot.innerHTML = '';
+    const countNode = document.createElement('span');
+    countNode.textContent = allMatches.length === 1 ? '1 match' : String(allMatches.length) + ' matches';
+    metaRoot.appendChild(countNode);
+
+    const hintNode = document.createElement('span');
+    if (!allMatches.length) {
+      hintNode.textContent = 'Try another class or search.';
+    } else if (allMatches.length > visibleMatches.length) {
+      hintNode.textContent = 'Showing top ' + visibleMatches.length;
+    } else {
+      hintNode.textContent = 'Tap to choose';
+    }
+    metaRoot.appendChild(hintNode);
+
+    resultsRoot.innerHTML = '';
+    if (!allMatches.length) {
+      const empty = document.createElement('div');
+      empty.className = 'compound-empty';
+      empty.textContent = 'No substances match the current class and search.';
+      resultsRoot.appendChild(empty);
+      return;
+    }
+
+    visibleMatches.forEach(function(compound) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'compound-option' + (compound.name === currentName ? ' active' : '');
+      button.setAttribute('data-compound-kind', kind);
+      button.setAttribute('data-compound-name', compound.name);
+
+      const nameNode = document.createElement('div');
+      nameNode.className = 'compound-option-name';
+      nameNode.textContent = String(compound.display_name || compound.name);
+      button.appendChild(nameNode);
+
+      const metaNode = document.createElement('div');
+      metaNode.className = 'compound-option-meta';
+      metaNode.textContent = categoryLabelFor(compound.category) + ' · ' + String(compound.route || 'unknown');
+      button.appendChild(metaNode);
+
+      button.addEventListener('click', function() {
+        selectCompoundOption(kind, compound.name);
+      });
+      resultsRoot.appendChild(button);
+    });
+
+    if (allMatches.length > visibleMatches.length) {
+      const note = document.createElement('div');
+      note.className = 'compound-results-note';
+      note.textContent = 'Keep typing to narrow the full list.';
+      resultsRoot.appendChild(note);
+    }
+  }
+
+  function selectCompoundOption(kind, compoundName, options) {
+    const select = document.getElementById(kind + '-compound');
+    if (!select || !compoundName) return;
+    const opts = options || {};
+
+    if (opts.alignFilters) {
+      syncPickerToCompound(kind, compoundName);
+      syncPickerInputs(kind);
+      fillCompoundSelect(kind + '-compound', kind);
+    }
+
+    select.value = compoundName;
+    renderCompoundPicker(kind, compoundsForPicker(kind));
+
+    if (opts.remember !== false) {
+      state.preferredCompound = compoundName;
+      saveUiPrefs();
+    }
+  }
+
   function fillCompoundSelect(selectId, kind, options) {
     const select = document.getElementById(selectId);
     if (!select) return;
     const allowBlank = options && options.allowBlank;
     const blankLabel = options && options.blankLabel ? options.blankLabel : 'All substances';
     const compounds = compoundsForPicker(kind);
+    const current = select.value;
     select.innerHTML = allowBlank ? ('<option value="">' + blankLabel + '</option>') : '';
     compounds.forEach(function(c) {
       const opt = document.createElement('option');
@@ -2909,7 +3146,9 @@ function renderDashboardHTML(appName, payloadJson) {
       opt.textContent = (c.display_name || c.name) + ' (' + (c.category || 'general') + ')';
       select.appendChild(opt);
     });
-    const preferred = state.preferredCompound;
+    const preferred = current && compounds.some(function(c) { return c.name === current; })
+      ? current
+      : state.preferredCompound;
     if (preferred && compounds.some(function(c) { return c.name === preferred; })) {
       select.value = preferred;
     } else if (!allowBlank && compounds.length) {
@@ -2917,6 +3156,7 @@ function renderDashboardHTML(appName, payloadJson) {
     } else if (allowBlank) {
       select.value = '';
     }
+    renderCompoundPicker(kind, compounds);
   }
 
   function handlePickerCategoryChange(kind) {
@@ -2961,24 +3201,6 @@ function renderDashboardHTML(appName, payloadJson) {
   setDefaultDateTimeInputs();
   renderRecentCompounds();
   renderDiagnostics();
-
-  const logCompoundSelect = document.getElementById('log-compound');
-  if (logCompoundSelect) {
-    logCompoundSelect.addEventListener('change', function() {
-      state.preferredCompound = logCompoundSelect.value || state.preferredCompound;
-      syncPickerToCompound('log', logCompoundSelect.value);
-      saveUiPrefs();
-    });
-  }
-
-  const scheduleCompoundSelect = document.getElementById('schedule-compound');
-  if (scheduleCompoundSelect) {
-    scheduleCompoundSelect.addEventListener('change', function() {
-      state.preferredCompound = scheduleCompoundSelect.value || state.preferredCompound;
-      syncPickerToCompound('schedule', scheduleCompoundSelect.value);
-      saveUiPrefs();
-    });
-  }
   consumeQueuedToast();
 
   const customDaysInput = document.getElementById('custom-days');
@@ -3141,13 +3363,8 @@ function renderDashboardHTML(appName, payloadJson) {
     root.querySelectorAll('button[data-recent-compound]').forEach(function(button) {
       button.addEventListener('click', function() {
         const name = button.getAttribute('data-recent-compound') || '';
-        const select = document.getElementById('log-compound');
-        if (select && name) {
-          syncPickerToCompound('log', name);
-          fillCompoundSelect('log-compound', 'log');
-          select.value = name;
-          state.preferredCompound = name;
-          saveUiPrefs();
+        if (name) {
+          selectCompoundOption('log', name, { alignFilters: true });
           setActivePanel('log', false);
           showToast('Quick Log set to ' + button.textContent + '.');
         }
@@ -3214,18 +3431,14 @@ function renderDashboardHTML(appName, payloadJson) {
     const dd = String(at.getDate()).padStart(2, '0');
     const hh = String(at.getHours()).padStart(2, '0');
     const min = String(at.getMinutes()).padStart(2, '0');
-    document.getElementById('schedule-compound').value = entry.compound;
     document.getElementById('schedule-dose').value = Number(entry.dose_mg || 0).toString();
     document.getElementById('schedule-every').value = Number(entry.every_days || 7).toString();
     document.getElementById('schedule-start-date').value = yyyy + '-' + mm + '-' + dd;
     document.getElementById('schedule-start-time').value = hh + ':' + min;
     document.getElementById('schedule-occurrences').value = entry.occurrences == null ? '' : String(entry.occurrences);
     document.getElementById('schedule-notes').value = String(entry.notes || '');
-    syncPickerToCompound('schedule', entry.compound);
-    fillCompoundSelect('schedule-compound', 'schedule');
+    selectCompoundOption('schedule', entry.compound, { alignFilters: true });
     setProtocolEditState(id);
-    state.preferredCompound = entry.compound || state.preferredCompound;
-    saveUiPrefs();
     setActivePanel('schedule', true);
     setFormStatus('schedule-status', 'Editing schedule. Save to update it.');
   }
@@ -3558,11 +3771,8 @@ function renderDashboardHTML(appName, payloadJson) {
     setLogEditState(null);
     setFormStatus('log-status', 'Edit cancelled.');
     if (state.preferredCompound) {
-      const compound = document.getElementById('log-compound');
-    if (compound) compound.value = state.preferredCompound;
+      selectCompoundOption('log', state.preferredCompound, { alignFilters: true, remember: false });
     }
-    syncPickerToCompound('log', state.preferredCompound);
-    fillCompoundSelect('log-compound', 'log');
     setActivePanel('log', false);
   }
 
@@ -3590,21 +3800,17 @@ function renderDashboardHTML(appName, payloadJson) {
     const hh = String(at.getHours()).padStart(2, '0');
     const min = String(at.getMinutes()).padStart(2, '0');
 
-    const compound = document.getElementById('log-compound');
     const dose = document.getElementById('log-dose');
     const date = document.getElementById('log-date');
     const time = document.getElementById('log-time');
     const notes = document.getElementById('log-notes');
 
-    if (compound) compound.value = entry.compound || '';
     if (dose) dose.value = Number(entry.dose_mg || 0).toString();
     if (date) date.value = yyyy + '-' + mm + '-' + dd;
     if (time) time.value = hh + ':' + min;
     if (notes) notes.value = String(entry.notes || '');
 
-    syncPickerToCompound('log', entry.compound);
-    fillCompoundSelect('log-compound', 'log');
-    state.preferredCompound = entry.compound || state.preferredCompound;
+    selectCompoundOption('log', entry.compound, { alignFilters: true });
     setLogEditState(id);
     setActivePanel('log', true);
     setFormStatus('log-status', 'Editing past log entry. Save Changes to update it.');
@@ -3663,6 +3869,11 @@ function renderDashboardHTML(appName, payloadJson) {
     state.preferredCompound = compound || state.preferredCompound;
     saveUiPrefs();
 
+    if (!compound) {
+      setFormStatus('log-status', 'Choose a substance before saving.');
+      return;
+    }
+
     if (!(dose > 0)) {
       setFormStatus('log-status', 'Dose must be greater than 0.');
       return;
@@ -3701,6 +3912,11 @@ function renderDashboardHTML(appName, payloadJson) {
 
     state.preferredCompound = compound || state.preferredCompound;
     saveUiPrefs();
+
+    if (!compound) {
+      setFormStatus('schedule-status', 'Choose a substance before saving.');
+      return;
+    }
 
     if (!(dose > 0) || !(every > 0)) {
       setFormStatus('schedule-status', 'Dose and interval must be greater than 0.');

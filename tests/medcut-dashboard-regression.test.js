@@ -207,14 +207,44 @@ test('dashboard forms support class-first and typed substance filtering', () => 
 
   assert.match(
     source,
+    /class="compound-picker"[\s\S]*?id="log-compound-current" class="compound-current"[\s\S]*?id="log-compound-results" class="compound-results"/,
+    'Expected Quick Log substance picking to use a selected-state card plus an in-form results list.'
+  );
+
+  assert.match(
+    source,
+    /class="compound-picker"[\s\S]*?id="schedule-compound-current" class="compound-current"[\s\S]*?id="schedule-compound-results" class="compound-results"/,
+    'Expected schedule form substance picking to reuse the same search-and-results surface.'
+  );
+
+  assert.match(
+    source,
     /function fillCategorySelect\(selectId\)/,
     'Expected class picker options to be populated through a shared select helper.'
   );
 
   assert.match(
     source,
+    /function renderCompoundPicker\(kind, compounds\)/,
+    'Expected a dedicated renderer for the visible substance picker surface.'
+  );
+
+  assert.match(
+    source,
+    /function selectCompoundOption\(kind, compoundName, options\)/,
+    'Expected substance selection to be handled through an explicit picker helper.'
+  );
+
+  assert.match(
+    source,
     /const item = document\.createElement\('option'\);[\s\S]*?item\.textContent = option\.label;/,
     'Expected class picker options to be built from payload-backed labels via DOM option nodes.'
+  );
+
+  assert.match(
+    source,
+    /const button = document\.createElement\('button'\);[\s\S]*?button\.className = 'compound-option' \+ \(compound\.name === currentName \? ' active' : ''\);[\s\S]*?nameNode\.textContent = String\(compound\.display_name \|\| compound\.name\);/,
+    'Expected substance results to be rendered as explicit tappable rows with selected-state styling.'
   );
 
   assert.match(
@@ -312,6 +342,18 @@ test('status cards and picker surfaces can shrink to the viewport without overfl
     /\.card-topline \{[\s\S]*?min-width: 0;/,
     'Expected card toplines to allow inner content to shrink on narrow screens.'
   );
+
+  assert.match(
+    source,
+    /\.compound-current \{[\s\S]*?min-width: 0;[\s\S]*?padding: 10px 12px;/,
+    'Expected the selected-substance card to stay shrinkable on narrow screens.'
+  );
+
+  assert.match(
+    source,
+    /\.compound-results \{[\s\S]*?max-height: 220px;[\s\S]*?overflow: auto;[\s\S]*?min-width: 0;/,
+    'Expected the substance result list to stay scrollable within the form instead of overflowing the viewport.'
+  );
 });
 
 test('past injections are editable and deletable from history list', () => {
@@ -391,6 +433,12 @@ test('entry form controls are responsive and can shrink without overflow', () =>
 
   assert.match(
     source,
+    /\.compound-option \{[\s\S]*?width: 100%;[\s\S]*?text-align: left;[\s\S]*?font: inherit;/,
+    'Expected visible substance options to behave like full-width mobile list rows rather than cramped dropdown items.'
+  );
+
+  assert.match(
+    source,
     /\.native-temporal-shell \{[\s\S]*?display: flex;[\s\S]*?width: 100%;[\s\S]*?overflow: hidden;/,
     'Expected native temporal controls to render inside a width-constrained shell.'
   );
@@ -435,6 +483,18 @@ test('entry form controls are responsive and can shrink without overflow', () =>
     source,
     /@media \(max-width: 980px\) \{[\s\S]*?\.action-rail \{ grid-template-columns: repeat\(3, minmax\(0, 1fr\)\); \}/,
     'Expected the compact action rail to reflow at medium widths.'
+  );
+
+  assert.match(
+    source,
+    /if \(!compound\) \{\s*setFormStatus\('log-status', 'Choose a substance before saving\.'\);\s*return;\s*\}/,
+    'Expected Quick Log to fail clearly when no visible substance is selected.'
+  );
+
+  assert.match(
+    source,
+    /if \(!compound\) \{\s*setFormStatus\('schedule-status', 'Choose a substance before saving\.'\);\s*return;\s*\}/,
+    'Expected Schedule to fail clearly when no visible substance is selected.'
   );
 });
 

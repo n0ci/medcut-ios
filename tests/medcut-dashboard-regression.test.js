@@ -165,8 +165,8 @@ test('dashboard keeps only essential graph controls and simple ui preferences', 
 test('dashboard forms support class-first and typed substance filtering', () => {
   assert.match(
     source,
-    /id="log-category-trigger" class="category-picker-trigger"/,
-    'Expected Quick Log to expose class filtering.'
+    /id="log-category" onchange="handlePickerCategoryChange\('log'\)"/,
+    'Expected Quick Log to expose class filtering with a regular picker.'
   );
 
   assert.match(
@@ -177,8 +177,8 @@ test('dashboard forms support class-first and typed substance filtering', () => 
 
   assert.match(
     source,
-    /id="schedule-category-trigger" class="category-picker-trigger"/,
-    'Expected schedule form to expose class filtering.'
+    /id="schedule-category" onchange="handlePickerCategoryChange\('schedule'\)"/,
+    'Expected schedule form to expose class filtering with a regular picker.'
   );
 
   assert.match(
@@ -207,44 +207,20 @@ test('dashboard forms support class-first and typed substance filtering', () => 
 
   assert.match(
     source,
-    /\.category-picker \{[\s\S]*?position: relative;[\s\S]*?min-width: 0;/,
-    'Expected class pickers to render through a dedicated custom picker container.'
+    /function fillCategorySelect\(selectId\)/,
+    'Expected class picker options to be populated through a shared select helper.'
   );
 
   assert.match(
     source,
-    /function renderCategoryPicker\(kind\)/,
-    'Expected custom class picker rendering helper for dashboard filters.'
-  );
-
-  assert.match(
-    source,
-    /\.category-picker-trigger \{[\s\S]*?display: flex;[\s\S]*?justify-content: space-between;[\s\S]*?cursor: pointer;/,
-    'Expected class picker trigger to use a dedicated non-native control surface.'
-  );
-
-  assert.match(
-    source,
-    /\.category-picker-menu\.open \{[\s\S]*?display: grid;[\s\S]*?gap: 4px;/,
-    'Expected class picker to open an in-place custom chooser menu.'
+    /const item = document\.createElement\('option'\);[\s\S]*?item\.textContent = option\.label;/,
+    'Expected class picker options to be built from payload-backed labels via DOM option nodes.'
   );
 
   assert.match(
     source,
     /const categoryOptions = Array\.isArray\(payload\.categories\) && payload\.categories\.length/,
     'Expected class picker labels to come from payload-provided category options.'
-  );
-
-  assert.match(
-    source,
-    /const row = document\.createElement\('div'\);[\s\S]*?row\.textContent = option\.label;/,
-    'Expected class menu options to be built with DOM nodes and textContent, not string HTML.'
-  );
-
-  assert.match(
-    source,
-    /document\.addEventListener\('click', function\(event\) \{[\s\S]*?closest\('\.category-picker'\)[\s\S]*?closeCategoryMenus\(\);/,
-    'Expected class pickers to close when tapping outside the custom picker.'
   );
 });
 

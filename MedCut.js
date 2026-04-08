@@ -2237,86 +2237,6 @@ function renderDashboardHTML(appName, payloadJson) {
   .picker-toolbar .field-stack {
     min-width: 0;
   }
-  .category-picker {
-    position: relative;
-    min-width: 0;
-  }
-  .category-picker-trigger {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    width: 100%;
-    min-width: 0;
-    min-height: 38px;
-    box-sizing: border-box;
-    border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.10);
-    background: rgba(255,255,255,0.06);
-    color: #fff;
-    padding: 8px 10px;
-    cursor: pointer;
-  }
-  .category-picker-trigger.is-open {
-    background: rgba(255,255,255,0.12);
-    border-color: rgba(255,255,255,0.20);
-  }
-  .category-picker-value {
-    flex: 1 1 auto;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: 12px;
-    font-family: inherit;
-    font-weight: 500;
-    line-height: 1.2;
-    letter-spacing: 0;
-    text-transform: none;
-  }
-  .category-picker-caret {
-    flex: 0 0 auto;
-    color: var(--muted);
-    font-size: 11px;
-  }
-  .category-picker-menu {
-    display: none;
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: calc(100% + 6px);
-    z-index: 4;
-    background: rgba(12, 21, 34, 0.98);
-    border: 1px solid rgba(255,255,255,0.10);
-    border-radius: 14px;
-    padding: 6px;
-    box-shadow: 0 12px 24px rgba(0,0,0,0.24);
-  }
-  .category-picker-menu.open {
-    display: grid;
-    gap: 4px;
-  }
-  .category-picker-option {
-    display: block;
-    min-width: 0;
-    padding: 9px 10px;
-    border-radius: 10px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-size: 12px;
-    font-family: inherit;
-    font-weight: 500;
-    line-height: 1.2;
-    letter-spacing: 0;
-    text-transform: none;
-    color: #fff;
-    cursor: pointer;
-  }
-  .category-picker-option.active {
-    background: rgba(255,255,255,0.14);
-    border: 1px solid rgba(255,255,255,0.16);
-  }
   .action-rail {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -2725,14 +2645,9 @@ function renderDashboardHTML(appName, payloadJson) {
               <div class="picker-toolbar">
                 <div class="field-stack">
                   <label class="field-label" for="log-category">Class</label>
-                  <div class="category-picker">
-                    <input id="log-category" type="hidden" value="all">
-                    <div id="log-category-trigger" class="category-picker-trigger" role="button" tabindex="0" aria-expanded="false" aria-controls="log-category-menu">
-                      <span id="log-category-value" class="category-picker-value">All classes</span>
-                      <span class="category-picker-caret">v</span>
-                    </div>
-                    <div id="log-category-menu" class="category-picker-menu"></div>
-                  </div>
+                  <select id="log-category" onchange="handlePickerCategoryChange('log')">
+                    <option value="all">All classes</option>
+                  </select>
                 </div>
                 <div class="field-stack">
                   <label class="field-label" for="log-search">Search</label>
@@ -2786,14 +2701,9 @@ function renderDashboardHTML(appName, payloadJson) {
               <div class="picker-toolbar">
                 <div class="field-stack">
                   <label class="field-label" for="schedule-category">Class</label>
-                  <div class="category-picker">
-                    <input id="schedule-category" type="hidden" value="all">
-                    <div id="schedule-category-trigger" class="category-picker-trigger" role="button" tabindex="0" aria-expanded="false" aria-controls="schedule-category-menu">
-                      <span id="schedule-category-value" class="category-picker-value">All classes</span>
-                      <span class="category-picker-caret">v</span>
-                    </div>
-                    <div id="schedule-category-menu" class="category-picker-menu"></div>
-                  </div>
+                  <select id="schedule-category" onchange="handlePickerCategoryChange('schedule')">
+                    <option value="all">All classes</option>
+                  </select>
                 </div>
                 <div class="field-stack">
                   <label class="field-label" for="schedule-search">Search</label>
@@ -2914,7 +2824,6 @@ function renderDashboardHTML(appName, payloadJson) {
     editProtocolId: null,
     preferredCompound: null,
     expandedCard: null,
-    openCategoryPicker: null,
     pickerFilters: {
       log: { category: 'all', query: '' },
       schedule: { category: 'all', query: '' }
@@ -2948,80 +2857,27 @@ function renderDashboardHTML(appName, payloadJson) {
     return categoryOptions.slice();
   }
 
-  function categoryLabel(category) {
-    const match = availableCategories().find(function(option) { return option.value === category; });
-    return match ? match.label : (category === 'all' ? 'All classes' : browserTitleCase(category));
-  }
-
-  function closeCategoryMenus() {
-    state.openCategoryPicker = null;
-    ['log', 'schedule'].forEach(function(kind) {
-      renderCategoryPicker(kind);
+  function fillCategorySelect(selectId) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    const current = select.value;
+    select.innerHTML = '';
+    availableCategories().forEach(function(option) {
+      const item = document.createElement('option');
+      item.value = option.value;
+      item.textContent = option.label;
+      select.appendChild(item);
     });
-  }
-
-  function toggleCategoryPicker(kind) {
-    state.openCategoryPicker = state.openCategoryPicker === kind ? null : kind;
-    ['log', 'schedule'].forEach(function(name) {
-      renderCategoryPicker(name);
-    });
+    if (current && availableCategories().some(function(option) { return option.value === current; })) {
+      select.value = current;
+    }
   }
 
   function setPickerCategory(kind, category) {
     if (!state.pickerFilters[kind]) state.pickerFilters[kind] = { category: 'all', query: '' };
     state.pickerFilters[kind].category = category || 'all';
-    state.openCategoryPicker = null;
     syncPickerInputs(kind);
     fillCompoundSelect(kind + '-compound', kind);
-  }
-
-  function renderCategoryPicker(kind) {
-    const trigger = document.getElementById(kind + '-category-trigger');
-    const value = document.getElementById(kind + '-category-value');
-    const menu = document.getElementById(kind + '-category-menu');
-    if (!trigger || !value || !menu) return;
-    const current = (state.pickerFilters[kind] || {}).category || 'all';
-    value.textContent = categoryLabel(current);
-    trigger.classList.toggle('is-open', state.openCategoryPicker === kind);
-    trigger.setAttribute('aria-expanded', state.openCategoryPicker === kind ? 'true' : 'false');
-
-    menu.classList.toggle('open', state.openCategoryPicker === kind);
-    while (menu.firstChild) menu.removeChild(menu.firstChild);
-    availableCategories().forEach(function(option) {
-      const active = current === option.value;
-      const row = document.createElement('div');
-      row.className = 'category-picker-option' + (active ? ' active' : '');
-      row.setAttribute('role', 'button');
-      row.tabIndex = 0;
-      row.setAttribute('data-picker-kind', kind);
-      row.setAttribute('data-category', option.value);
-      row.textContent = option.label;
-      menu.appendChild(row);
-    });
-
-    trigger.onclick = function(event) {
-      event.preventDefault();
-      event.stopPropagation();
-      toggleCategoryPicker(kind);
-    };
-    trigger.onkeydown = function(event) {
-      if (event.key !== 'Enter' && event.key !== ' ') return;
-      event.preventDefault();
-      toggleCategoryPicker(kind);
-    };
-
-    menu.querySelectorAll('[data-category]').forEach(function(option) {
-      function chooseCategory(event) {
-        event.preventDefault();
-        event.stopPropagation();
-        setPickerCategory(kind, option.getAttribute('data-category') || 'all');
-      }
-      option.addEventListener('click', chooseCategory);
-      option.addEventListener('keydown', function(event) {
-        if (event.key !== 'Enter' && event.key !== ' ') return;
-        chooseCategory(event);
-      });
-    });
   }
 
   function compoundsForPicker(kind) {
@@ -3049,7 +2905,6 @@ function renderDashboardHTML(appName, payloadJson) {
     const searchInput = document.getElementById(kind + '-search');
     if (categorySelect && categorySelect.value !== picker.category) categorySelect.value = picker.category;
     if (searchInput && searchInput.value !== picker.query) searchInput.value = picker.query;
-    renderCategoryPicker(kind);
   }
 
   function syncPickerToCompound(kind, compoundName) {
@@ -3115,6 +2970,8 @@ function renderDashboardHTML(appName, payloadJson) {
   if (!state.preferredCompound && payload.compounds.length) {
     state.preferredCompound = payload.compounds[0].name;
   }
+  fillCategorySelect('log-category');
+  fillCategorySelect('schedule-category');
   syncPickerToCompound('log', state.preferredCompound);
   syncPickerToCompound('schedule', state.preferredCompound);
   syncPickerInputs('log');
@@ -3124,11 +2981,6 @@ function renderDashboardHTML(appName, payloadJson) {
   setDefaultDateTimeInputs();
   renderRecentCompounds();
   renderDiagnostics();
-
-  document.addEventListener('click', function(event) {
-    if (event.target && typeof event.target.closest === 'function' && event.target.closest('.category-picker')) return;
-    closeCategoryMenus();
-  });
 
   const logCompoundSelect = document.getElementById('log-compound');
   if (logCompoundSelect) {

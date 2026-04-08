@@ -3,19 +3,50 @@ async function chooseCompound(data, prompt) {
   const names = compoundNames(data)
   if (!names.length) return null
 
-  const multiCategory = (data.categories || []).length > 1
+  let selectedCategory = "all"
+  const categories = Array.from(new Set(names.map(function(name) {
+    const compound = data.compounds[name] || {}
+    return compound.category || DEFAULT_CATEGORY
+  }))).sort()
+
+  if (categories.length > 1) {
+    const categoryAlert = new Alert()
+    categoryAlert.title = prompt || "Choose compound"
+    categoryAlert.message = "Choose a class first"
+    categoryAlert.addAction("All classes")
+    categories.forEach(function(category) {
+      categoryAlert.addAction(titleCase(category))
+    })
+    categoryAlert.addCancelAction("Cancel")
+    const categoryIdx = await categoryAlert.presentSheet()
+    if (categoryIdx === -1) return null
+    if (categoryIdx > 0) selectedCategory = categories[categoryIdx - 1]
+  }
+
+  const filteredNames = names
+    .filter(function(name) {
+      if (selectedCategory === "all") return true
+      const compound = data.compounds[name] || {}
+      return (compound.category || DEFAULT_CATEGORY) === selectedCategory
+    })
+    .sort(function(a, b) {
+      const compoundA = data.compounds[a] || {}
+      const compoundB = data.compounds[b] || {}
+      return String(compoundA.display_name || a).localeCompare(String(compoundB.display_name || b))
+    })
+
+  if (!filteredNames.length) return null
 
   const alert = new Alert()
   alert.title = prompt || "Choose compound"
-  for (const name of names) {
+  for (const name of filteredNames) {
     const c = data.compounds[name]
-    const base = c.display_name || titleCase(name)
-    alert.addAction(multiCategory ? `${base} (${c.category || DEFAULT_CATEGORY})` : base)
+    alert.addAction(c.display_name || titleCase(name))
   }
   alert.addCancelAction("Cancel")
   const idx = await alert.presentSheet()
   if (idx === -1) return null
-  return names[idx]
+  return filteredNames[idx]
 }
 
 async function promptLogInjection(data) {

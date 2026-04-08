@@ -38,6 +38,12 @@ test('legend uses data-compound wiring instead of inline toggle function call', 
     /addEventListener\('change', function\(\) \{\s*toggleCompound\(cb\.getAttribute\('data-compound'\) \|\| ''\);\s*\}\);/,
     'Expected checkbox change listeners that call toggleCompound with data attribute value.'
   );
+
+  assert.match(
+    source,
+    /function graphLegendCompounds\(\)/,
+    'Expected legend entries to be derived from the current graph window, not the full catalog.'
+  );
 });
 
 test('plot warning rendering avoids innerHTML injection', () => {
@@ -80,6 +86,20 @@ test('draw() still surfaces no-data warning states', () => {
   );
 });
 
+test('chart surface disables text selection and touch callouts on iphone', () => {
+  assert.match(
+    source,
+    /\.chart-wrap \{[\s\S]*?-webkit-user-select: none;[\s\S]*?user-select: none;[\s\S]*?-webkit-touch-callout: none;/,
+    'Expected chart wrapper to disable text selection and iOS touch callouts.'
+  );
+
+  assert.match(
+    source,
+    /chartWrap\.addEventListener\(eventName, function\(event\) \{\s*event\.preventDefault\(\);/ ,
+    'Expected chart wrapper to prevent selectstart/contextmenu defaults.'
+  );
+});
+
 test('dashboard keeps only essential graph controls and simple ui preferences', () => {
   assert.match(
     source,
@@ -109,6 +129,70 @@ test('dashboard keeps only essential graph controls and simple ui preferences', 
     source,
     /id="focus-compound" class="focus-select" onchange="setFocusCompound\(this\.value\)"/,
     'Expected the remaining visible graph control to be the focus selector.'
+  );
+
+  assert.match(
+    source,
+    /id="focus-category" onchange="handlePickerCategoryChange\('focus'\)"/,
+    'Expected class-first filtering ahead of graph substance selection.'
+  );
+
+  assert.doesNotMatch(
+    source,
+    /Schema v<span id="schema"><\/span>|live estimate from logs and enabled schedules/,
+    'The top header should avoid verbose schema/live-estimate copy.'
+  );
+});
+
+test('dashboard forms support class-first and typed substance filtering', () => {
+  assert.match(
+    source,
+    /id="log-category" onchange="handlePickerCategoryChange\('log'\)"/,
+    'Expected Quick Log to expose class filtering.'
+  );
+
+  assert.match(
+    source,
+    /id="log-search" type="search" placeholder="Filter substance" oninput="handlePickerSearchChange\('log'\)"/,
+    'Expected Quick Log to expose typed substance filtering.'
+  );
+
+  assert.match(
+    source,
+    /id="schedule-category" onchange="handlePickerCategoryChange\('schedule'\)"/,
+    'Expected schedule form to expose class filtering.'
+  );
+
+  assert.match(
+    source,
+    /function compoundsForPicker\(kind\)/,
+    'Expected shared picker filtering logic across dashboard selectors.'
+  );
+});
+
+test('header uses compact count chips and status cards expand for details', () => {
+  assert.match(
+    source,
+    /class="hero-chip"/,
+    'Expected the top header to render compact count chips.'
+  );
+
+  assert.match(
+    source,
+    /data-card-expand="/,
+    'Expected status cards to expose expandable detail containers.'
+  );
+
+  assert.match(
+    source,
+    /state\.expandedCard = state\.expandedCard === name \? null : name;/,
+    'Expected only one status card detail view to be expanded at a time.'
+  );
+
+  assert.match(
+    source,
+    /<div class="small">Confidence: /,
+    'Expected confidence metadata to move into the expandable details section.'
   );
 });
 
@@ -246,6 +330,20 @@ test('shortcut handler supports dashboard-return mode for form actions', () => {
   );
 });
 
+test('native prompt chooser narrows substances by class first', () => {
+  assert.match(
+    source,
+    /categoryAlert\.message = "Choose a class first"/,
+    'Expected native compound chooser to prompt for class before substance.'
+  );
+
+  assert.match(
+    source,
+    /categoryAlert\.addAction\("All classes"\)/,
+    'Expected native compound chooser to allow an all-classes fallback.'
+  );
+});
+
 test('dashboard includes past injections history panel', () => {
   assert.match(
     source,
@@ -347,19 +445,6 @@ test('graph controls remain below chart and actions open a management workspace'
     'Expected custom day window numeric control.'
   );
 
-  assert.match(
-    source,
-    /id="refresh-dashboard" class="pill" type="button" onclick="refreshDashboard\(\)"/,
-    'Expected explicit dashboard refresh control in graph toolbar.'
-  );
-});
-
-test('dashboard refresh action reopens dashboard run', () => {
-  assert.match(
-    source,
-    /function refreshDashboard\(\) \{\s*const url = buildRunUrl\(\{ action: 'dashboard', ui: 'open' \}\);\s*window\.location\.href = url;\s*\}/,
-    'Expected refresh action to relaunch Scriptable dashboard with fresh payload.'
-  );
 });
 
 test('history pagination load-more wiring exists', () => {

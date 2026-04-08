@@ -1951,6 +1951,24 @@ function renderDashboardHTML(appName, payloadJson) {
     margin-top: 8px;
     color: var(--muted);
     font-size: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .hero-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #dbe8ff;
+    font-size: 12px;
+  }
+  .hero-chip strong {
+    font-size: 13px;
+    color: var(--text);
   }
   .diag-banner {
     display: none;
@@ -2054,6 +2072,7 @@ function renderDashboardHTML(appName, payloadJson) {
     display: flex;
     align-items: center;
     gap: 8px;
+    min-width: 0;
   }
   .dot {
     width: 10px;
@@ -2072,17 +2091,39 @@ function renderDashboardHTML(appName, payloadJson) {
     font-size: 12px;
     color: var(--muted);
   }
-  .badge {
-    margin-top: 7px;
-    display: inline-block;
-    font-size: 11px;
-    border-radius: 999px;
-    padding: 4px 8px;
-    border: 1px solid rgba(255,255,255,0.16);
+  .card-topline {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
   }
-  .badge.good { color: var(--good); }
-  .badge.rough { color: var(--rough); }
-  .badge.low { color: var(--low); }
+  .card-expand {
+    color: var(--muted);
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .card-summary {
+    margin-top: 4px;
+  }
+  .card-details {
+    display: none;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+  .card.expanded .card-details {
+    display: block;
+  }
+  .card-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .card-actions .pill {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
   .graph-controls {
     display: grid;
     gap: 8px;
@@ -2119,6 +2160,19 @@ function renderDashboardHTML(appName, payloadJson) {
   }
   .focus-select {
     min-width: 180px;
+  }
+  .picker-stack {
+    display: grid;
+    gap: 8px;
+  }
+  .picker-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: 8px;
+  }
+  .picker-toolbar input,
+  .picker-toolbar select {
+    min-width: 0;
   }
   .action-rail {
     display: grid;
@@ -2323,6 +2377,9 @@ function renderDashboardHTML(appName, payloadJson) {
     border: 1px solid var(--panel-border);
     border-radius: 22px;
     padding: 14px;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
   }
   .chart-tip {
     position: absolute;
@@ -2377,12 +2434,17 @@ function renderDashboardHTML(appName, payloadJson) {
     width: 100%;
     height: auto;
     display: block;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
   }
   .legend {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
     margin-top: 10px;
+    -webkit-user-select: none;
+    user-select: none;
   }
   .legend label {
     background: rgba(255,255,255,0.06);
@@ -2412,6 +2474,7 @@ function renderDashboardHTML(appName, payloadJson) {
     .cards { grid-template-columns: 1fr; }
     .action-rail { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .entry-row { grid-template-columns: 1fr; }
+    .picker-toolbar { grid-template-columns: 1fr; }
     .toolbar.secondary { align-items: stretch; }
     .focus-select { width: 100%; }
     .hero-status { text-align: left; max-width: none; }
@@ -2425,7 +2488,6 @@ function renderDashboardHTML(appName, payloadJson) {
         <div>
           <div class="hero-kicker">Current State</div>
           <h1>${escapeHtml(appName)}</h1>
-          <div class="muted">Schema v<span id="schema"></span> • live estimate from logs and enabled schedules.</div>
         </div>
         <div id="hero-status" class="hero-status"></div>
       </div>
@@ -2459,10 +2521,15 @@ function renderDashboardHTML(appName, payloadJson) {
       </div>
 
       <div class="toolbar secondary">
+        <div class="picker-toolbar" style="flex:1">
+          <select id="focus-category" onchange="handlePickerCategoryChange('focus')">
+            <option value="all">All classes</option>
+          </select>
+          <input id="focus-search" type="search" placeholder="Filter substance" oninput="handlePickerSearchChange('focus')" />
+        </div>
         <select id="focus-compound" class="focus-select" onchange="setFocusCompound(this.value)">
-          <option value="">All compounds</option>
+          <option value="">All substances</option>
         </select>
-        <button id="refresh-dashboard" class="pill" type="button" onclick="refreshDashboard()">Refresh</button>
       </div>
     </div>
 
@@ -2486,7 +2553,15 @@ function renderDashboardHTML(appName, payloadJson) {
         <div class="workspace-copy">Save a new injection and return to the updated dashboard state.</div>
         <div id="entry-log" class="entry-card primary">
           <form onsubmit="submitLog(event)">
-            <select id="log-compound" required></select>
+            <div class="picker-stack">
+              <div class="picker-toolbar">
+                <select id="log-category" onchange="handlePickerCategoryChange('log')">
+                  <option value="all">All classes</option>
+                </select>
+                <input id="log-search" type="search" placeholder="Filter substance" oninput="handlePickerSearchChange('log')" />
+              </div>
+              <select id="log-compound" required></select>
+            </div>
             <div id="recent-compounds" class="recent-compounds"></div>
             <input id="log-dose" type="number" min="0" step="0.01" placeholder="Dose mg" required>
             <div class="entry-row compact-datetime">
@@ -2511,7 +2586,15 @@ function renderDashboardHTML(appName, payloadJson) {
         <div class="workspace-copy">Project upcoming doses without leaving the dashboard.</div>
         <div id="entry-schedule" class="entry-card">
           <form onsubmit="submitSchedule(event)">
-            <select id="schedule-compound" required></select>
+            <div class="picker-stack">
+              <div class="picker-toolbar">
+                <select id="schedule-category" onchange="handlePickerCategoryChange('schedule')">
+                  <option value="all">All classes</option>
+                </select>
+                <input id="schedule-search" type="search" placeholder="Filter substance" oninput="handlePickerSearchChange('schedule')" />
+              </div>
+              <select id="schedule-compound" required></select>
+            </div>
             <div class="entry-row">
               <input id="schedule-dose" type="number" min="0" step="0.01" placeholder="Dose mg" required>
               <input id="schedule-every" type="number" min="0.25" step="0.25" placeholder="Every days" value="7" required>
@@ -2594,46 +2677,127 @@ function renderDashboardHTML(appName, payloadJson) {
     editProtocolId: null,
     preferredCompound: null,
     focusCompound: null,
+    expandedCard: null,
+    pickerFilters: {
+      log: { category: 'all', query: '' },
+      schedule: { category: 'all', query: '' },
+      focus: { category: 'all', query: '' }
+    },
     activePanel: Array.isArray(payload.rows) && payload.rows.length ? '' : 'log',
     toastTimer: null
   };
   const HISTORY_PAGE_SIZE = 15;
   const UI_PREFS_KEY = 'medcut.dashboard.ui.v1';
   const PENDING_TOAST_KEY = 'medcut.dashboard.pendingToast.v1';
+  const categorySet = new Set(payload.compounds.map(function(c) { return c.category || DEFAULT_CATEGORY; }));
 
   applySavedUiPrefs();
 
-  function fillCompoundSelect(selectId) {
+  function fillCategorySelect(selectId) {
     const select = document.getElementById(selectId);
-    const compounds = payload.compounds.slice().sort((a, b) => {
-      return String(a.display_name || a.name).localeCompare(String(b.display_name || b.name));
+    if (!select) return;
+    select.innerHTML = '<option value="all">All classes</option>';
+    Array.from(categorySet).sort().forEach(function(category) {
+      const opt = document.createElement('option');
+      opt.value = category;
+      opt.textContent = titleCase(category);
+      select.appendChild(opt);
     });
-    select.innerHTML = '';
+  }
+
+  function compoundsForPicker(kind) {
+    const picker = state.pickerFilters[kind] || { category: 'all', query: '' };
+    const query = String(picker.query || '').trim().toLowerCase();
+    return payload.compounds
+      .filter(function(compound) {
+        if (picker.category !== 'all' && compound.category !== picker.category) return false;
+        if (!query) return true;
+        const haystack = [
+          compound.display_name || compound.name,
+          compound.name,
+          compound.category || DEFAULT_CATEGORY
+        ].join(' ').toLowerCase();
+        return haystack.indexOf(query) !== -1;
+      })
+      .sort(function(a, b) {
+        return String(a.display_name || a.name).localeCompare(String(b.display_name || b.name));
+      });
+  }
+
+  function syncPickerInputs(kind) {
+    const picker = state.pickerFilters[kind] || { category: 'all', query: '' };
+    const categorySelect = document.getElementById(kind + '-category');
+    const searchInput = document.getElementById(kind + '-search');
+    if (categorySelect && categorySelect.value !== picker.category) categorySelect.value = picker.category;
+    if (searchInput && searchInput.value !== picker.query) searchInput.value = picker.query;
+  }
+
+  function syncPickerToCompound(kind, compoundName) {
+    const compound = payload.compounds.find(function(item) { return item.name === compoundName; });
+    if (!compound) return;
+    if (!state.pickerFilters[kind]) state.pickerFilters[kind] = { category: 'all', query: '' };
+    state.pickerFilters[kind].category = compound.category || DEFAULT_CATEGORY;
+    state.pickerFilters[kind].query = '';
+    syncPickerInputs(kind);
+  }
+
+  function fillCompoundSelect(selectId, kind, options) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    const allowBlank = options && options.allowBlank;
+    const blankLabel = options && options.blankLabel ? options.blankLabel : 'All substances';
+    const compounds = compoundsForPicker(kind);
+    select.innerHTML = allowBlank ? ('<option value="">' + blankLabel + '</option>') : '';
     compounds.forEach(function(c) {
       const opt = document.createElement('option');
       opt.value = c.name;
       opt.textContent = (c.display_name || c.name) + ' (' + (c.category || 'general') + ')';
       select.appendChild(opt);
     });
-    if (state.preferredCompound && compounds.some(function(c) { return c.name === state.preferredCompound; })) {
-      select.value = state.preferredCompound;
+    const preferred = kind === 'focus' ? state.focusCompound : state.preferredCompound;
+    if (preferred && compounds.some(function(c) { return c.name === preferred; })) {
+      select.value = preferred;
+    } else if (!allowBlank && compounds.length) {
+      select.value = compounds[0].name;
+    } else if (allowBlank) {
+      select.value = '';
     }
   }
 
   function fillFocusCompoundSelect() {
-    const select = document.getElementById('focus-compound');
-    if (!select) return;
-    const compounds = payload.compounds.slice().sort(function(a, b) {
-      return String(a.display_name || a.name).localeCompare(String(b.display_name || b.name));
-    });
-    select.innerHTML = '<option value="">All compounds</option>';
-    compounds.forEach(function(c) {
-      const opt = document.createElement('option');
-      opt.value = c.name;
-      opt.textContent = c.display_name || c.name;
-      select.appendChild(opt);
-    });
-    select.value = state.focusCompound || '';
+    fillCompoundSelect('focus-compound', 'focus', { allowBlank: true, blankLabel: 'All substances' });
+  }
+
+  function handlePickerCategoryChange(kind) {
+    const select = document.getElementById(kind + '-category');
+    if (!state.pickerFilters[kind]) state.pickerFilters[kind] = { category: 'all', query: '' };
+    state.pickerFilters[kind].category = select ? select.value : 'all';
+    if (kind === 'focus') {
+      fillFocusCompoundSelect();
+      if (state.focusCompound && !compoundsForPicker('focus').some(function(compound) { return compound.name === state.focusCompound; })) {
+        state.focusCompound = null;
+      }
+      saveUiPrefs();
+      draw(false);
+      return;
+    }
+    fillCompoundSelect(kind + '-compound', kind);
+  }
+
+  function handlePickerSearchChange(kind) {
+    const input = document.getElementById(kind + '-search');
+    if (!state.pickerFilters[kind]) state.pickerFilters[kind] = { category: 'all', query: '' };
+    state.pickerFilters[kind].query = input ? input.value : '';
+    if (kind === 'focus') {
+      fillFocusCompoundSelect();
+      if (state.focusCompound && !compoundsForPicker('focus').some(function(compound) { return compound.name === state.focusCompound; })) {
+        state.focusCompound = null;
+      }
+      saveUiPrefs();
+      draw(false);
+      return;
+    }
+    fillCompoundSelect(kind + '-compound', kind);
   }
 
   function setDefaultDateTimeInputs() {
@@ -2655,8 +2819,16 @@ function renderDashboardHTML(appName, payloadJson) {
   if (!state.preferredCompound && payload.compounds.length) {
     state.preferredCompound = payload.compounds[0].name;
   }
-  fillCompoundSelect('log-compound');
-  fillCompoundSelect('schedule-compound');
+  fillCategorySelect('log-category');
+  fillCategorySelect('schedule-category');
+  fillCategorySelect('focus-category');
+  syncPickerToCompound('log', state.preferredCompound);
+  syncPickerToCompound('schedule', state.preferredCompound);
+  syncPickerInputs('log');
+  syncPickerInputs('schedule');
+  syncPickerInputs('focus');
+  fillCompoundSelect('log-compound', 'log');
+  fillCompoundSelect('schedule-compound', 'schedule');
   fillFocusCompoundSelect();
   setDefaultDateTimeInputs();
   renderRecentCompounds();
@@ -2666,6 +2838,7 @@ function renderDashboardHTML(appName, payloadJson) {
   if (logCompoundSelect) {
     logCompoundSelect.addEventListener('change', function() {
       state.preferredCompound = logCompoundSelect.value || state.preferredCompound;
+      syncPickerToCompound('log', logCompoundSelect.value);
       saveUiPrefs();
     });
   }
@@ -2674,6 +2847,7 @@ function renderDashboardHTML(appName, payloadJson) {
   if (scheduleCompoundSelect) {
     scheduleCompoundSelect.addEventListener('change', function() {
       state.preferredCompound = scheduleCompoundSelect.value || state.preferredCompound;
+      syncPickerToCompound('schedule', scheduleCompoundSelect.value);
       saveUiPrefs();
     });
   }
@@ -2718,28 +2892,23 @@ function renderDashboardHTML(appName, payloadJson) {
     const meta = document.getElementById('hero-meta');
     const status = document.getElementById('hero-status');
     const filtered = filteredRows();
-    const nextDose = filtered
-      .map(function(row) { return row.next ? new Date(row.next) : null; })
-      .filter(function(value) { return value && Number.isFinite(value.getTime()); })
-      .sort(function(a, b) { return a - b })[0] || null;
     if (meta) {
-      const parts = [
-        filtered.length + ' live compounds',
-        (payload.overview.recent_injection_count || 0) + ' logs in 7d',
-        (payload.overview.enabled_schedule_count || 0) + ' active schedules'
+      const chips = [
+        { label: 'Active', value: filtered.length, note: 'substances' },
+        { label: 'Schedules', value: payload.overview.enabled_schedule_count || 0, note: 'enabled' },
+        { label: 'Logs', value: payload.overview.recent_injection_count || 0, note: 'last 7d' }
       ];
-      if (nextDose) parts.push('next dose ' + relativeFromNow(nextDose.toISOString()));
-      meta.textContent = parts.join(' • ');
+      meta.innerHTML = chips.map(function(item) {
+        return '<div class="hero-chip"><strong>' + escapeHtmlText(String(item.value)) + '</strong><span>'
+          + escapeHtmlText(item.label + ' ' + item.note) + '</span></div>';
+      }).join('');
     }
 
     if (!status) return;
-    const nextText = nextDose ? ('Next scheduled dose ' + relativeFromNow(nextDose.toISOString())) : 'No scheduled dose upcoming';
     const focusMeta = state.focusCompound
       ? (payload.compounds.find(function(item) { return item.name === state.focusCompound; }) || {}).display_name || state.focusCompound
       : 'All compounds';
-    const statusItems = ['Focus: ' + focusMeta];
-    statusItems.push(nextText);
-    status.textContent = statusItems.join(' • ');
+    status.textContent = 'Focus: ' + focusMeta;
   }
 
   function renderDiagnostics() {
@@ -2811,6 +2980,8 @@ function renderDashboardHTML(appName, payloadJson) {
         const name = button.getAttribute('data-recent-compound') || '';
         const select = document.getElementById('log-compound');
         if (select && name) {
+          syncPickerToCompound('log', name);
+          fillCompoundSelect('log-compound', 'log');
           select.value = name;
           state.preferredCompound = name;
           saveUiPrefs();
@@ -2887,6 +3058,8 @@ function renderDashboardHTML(appName, payloadJson) {
     document.getElementById('schedule-start-time').value = hh + ':' + min;
     document.getElementById('schedule-occurrences').value = entry.occurrences == null ? '' : String(entry.occurrences);
     document.getElementById('schedule-notes').value = String(entry.notes || '');
+    syncPickerToCompound('schedule', entry.compound);
+    fillCompoundSelect('schedule-compound', 'schedule');
     setProtocolEditState(id);
     state.preferredCompound = entry.compound || state.preferredCompound;
     saveUiPrefs();
@@ -2992,24 +3165,36 @@ function renderDashboardHTML(appName, payloadJson) {
       const amount = Number(r.amount || 0).toFixed(2);
       const conc = Number(r.concentration || 0).toFixed(3);
       const color = safeColor(r.color);
-      const badgeClass = safeBadgeClass(r.quality);
       const displayName = escapeHtmlText(r.display_name);
       const route = escapeHtmlText(r.route);
       const category = escapeHtmlText(r.category);
       const qualityLabel = escapeHtmlText(r.quality_label);
       const safeLast = escapeHtmlText(lastText);
       const safeNext = escapeHtmlText(nextText);
-      return '<button class="card" type="button" data-focus-compound="' + escapeHtmlText(r.name) + '">'
-        + '<div class="name"><span class="dot" style="background:' + color + '"></span>' + displayName + ' <span class="badge ' + badgeClass + '">' + qualityLabel + '</span></div>'
+      const expanded = state.expandedCard === r.name;
+      return '<div class="card' + (expanded ? ' expanded' : '') + '" data-card-expand="' + escapeHtmlText(r.name) + '">'
+        + '<div class="card-topline"><div class="name"><span class="dot" style="background:' + color + '"></span>' + displayName + '</div><div class="card-expand">' + (expanded ? 'Hide details' : 'Details') + '</div></div>'
         + '<div class="big">' + amount + ' mg • ' + conc + ' mg/L</div>'
-        + '<div class="small">Last: ' + safeLast + ' • Next: ' + safeNext + '</div>'
+        + '<div class="small card-summary">Last: ' + safeLast + ' • Next: ' + safeNext + '</div>'
+        + '<div class="card-details">'
         + '<div class="small">Route: ' + route + ' • Category: ' + category + '</div>'
-        + '<div class="small">Source: ' + escapeHtmlText(r.quality_label) + '</div>'
-        + '</button>';
+        + '<div class="small">Confidence: ' + qualityLabel + '</div>'
+        + '<div class="card-actions"><button class="pill" type="button" data-focus-compound="' + escapeHtmlText(r.name) + '">Focus chart</button></div>'
+        + '</div>'
+        + '</div>';
     }).join('');
 
+    root.querySelectorAll('[data-card-expand]').forEach(function(card) {
+      card.addEventListener('click', function() {
+        const name = card.getAttribute('data-card-expand') || '';
+        state.expandedCard = state.expandedCard === name ? null : name;
+        renderCards();
+      });
+    });
+
     root.querySelectorAll('button[data-focus-compound]').forEach(function(button) {
-      button.addEventListener('click', function() {
+      button.addEventListener('click', function(event) {
+        event.stopPropagation();
         setFocusCompound(button.getAttribute('data-focus-compound') || '');
       });
     });
@@ -3021,8 +3206,9 @@ function renderDashboardHTML(appName, payloadJson) {
     if (state.focusCompound && !state.enabled.includes(state.focusCompound)) {
       state.enabled.push(state.focusCompound);
     }
-    const focusSelect = document.getElementById('focus-compound');
-    if (focusSelect) focusSelect.value = state.focusCompound || '';
+    if (state.focusCompound) syncPickerToCompound('focus', state.focusCompound);
+    syncPickerInputs('focus');
+    fillFocusCompoundSelect();
     saveUiPrefs();
     draw(false);
     showToast(state.focusCompound ? 'Focused chart on selected compound.' : 'Cleared chart focus.');
@@ -3158,10 +3344,10 @@ function renderDashboardHTML(appName, payloadJson) {
     const custom = document.getElementById('custom-days');
     if (custom) custom.value = String(state.days);
 
-    const focusSelect = document.getElementById('focus-compound');
-    if (focusSelect && focusSelect.value !== (state.focusCompound || '')) {
-      focusSelect.value = state.focusCompound || '';
-    }
+    syncPickerInputs('log');
+    syncPickerInputs('schedule');
+    syncPickerInputs('focus');
+    fillFocusCompoundSelect();
 
     renderOverview();
     updateWorkspaceVisibility();
@@ -3229,8 +3415,10 @@ function renderDashboardHTML(appName, payloadJson) {
     setFormStatus('log-status', 'Edit cancelled.');
     if (state.preferredCompound) {
       const compound = document.getElementById('log-compound');
-      if (compound) compound.value = state.preferredCompound;
+    if (compound) compound.value = state.preferredCompound;
     }
+    syncPickerToCompound('log', state.preferredCompound);
+    fillCompoundSelect('log-compound', 'log');
     setActivePanel('log', false);
   }
 
@@ -3270,6 +3458,8 @@ function renderDashboardHTML(appName, payloadJson) {
     if (time) time.value = hh + ':' + min;
     if (notes) notes.value = String(entry.notes || '');
 
+    syncPickerToCompound('log', entry.compound);
+    fillCompoundSelect('log-compound', 'log');
     state.preferredCompound = entry.compound || state.preferredCompound;
     setLogEditState(id);
     setActivePanel('log', true);
@@ -3283,11 +3473,6 @@ function renderDashboardHTML(appName, payloadJson) {
         return encodeURIComponent(key) + '=' + encodeURIComponent(String(params[key]));
       });
     return 'scriptable:///run/MedCut?' + parts.join('&');
-  }
-
-  function refreshDashboard() {
-    const url = buildRunUrl({ action: 'dashboard', ui: 'open' });
-    window.location.href = url;
   }
 
   function exportBackup() {
@@ -3428,10 +3613,22 @@ function renderDashboardHTML(appName, payloadJson) {
     return v === 'good' || v === 'rough' || v === 'low' ? v : 'rough';
   }
 
+  function graphLegendCompounds() {
+    const source = getSeries();
+    return source.compounds
+      .filter(function(compound) {
+        if (state.focusCompound && compound.name !== state.focusCompound) return false;
+        return Array.isArray(compound.points) && compound.points.length > 1;
+      })
+      .sort(function(a, b) {
+        return String(a.display_name || a.name).localeCompare(String(b.display_name || b.name));
+      });
+  }
+
   function buildLegend() {
     const root = document.getElementById('legend');
-    const filtered = filteredCompounds();
-    root.innerHTML = filtered.map(c => {
+    const visibleCompounds = graphLegendCompounds();
+    root.innerHTML = visibleCompounds.map(c => {
       const checked = state.enabled.includes(c.name) ? 'checked' : '';
       const safeName = escapeHtmlText(c.name);
       const color = safeColor(c.color);
@@ -3791,7 +3988,15 @@ function renderDashboardHTML(appName, payloadJson) {
     draw(true);
   }
 
+  const chartWrap = document.querySelector('.chart-wrap');
   const canvas = document.getElementById('chart');
+  if (chartWrap) {
+    ['contextmenu', 'selectstart'].forEach(function(eventName) {
+      chartWrap.addEventListener(eventName, function(event) {
+        event.preventDefault();
+      });
+    });
+  }
   canvas.addEventListener('mousemove', function(e) {
     updateHoverFromClientX(e.clientX);
   });
@@ -3855,19 +4060,50 @@ async function chooseCompound(data, prompt) {
   const names = compoundNames(data)
   if (!names.length) return null
 
-  const multiCategory = (data.categories || []).length > 1
+  let selectedCategory = "all"
+  const categories = Array.from(new Set(names.map(function(name) {
+    const compound = data.compounds[name] || {}
+    return compound.category || DEFAULT_CATEGORY
+  }))).sort()
+
+  if (categories.length > 1) {
+    const categoryAlert = new Alert()
+    categoryAlert.title = prompt || "Choose compound"
+    categoryAlert.message = "Choose a class first"
+    categoryAlert.addAction("All classes")
+    categories.forEach(function(category) {
+      categoryAlert.addAction(titleCase(category))
+    })
+    categoryAlert.addCancelAction("Cancel")
+    const categoryIdx = await categoryAlert.presentSheet()
+    if (categoryIdx === -1) return null
+    if (categoryIdx > 0) selectedCategory = categories[categoryIdx - 1]
+  }
+
+  const filteredNames = names
+    .filter(function(name) {
+      if (selectedCategory === "all") return true
+      const compound = data.compounds[name] || {}
+      return (compound.category || DEFAULT_CATEGORY) === selectedCategory
+    })
+    .sort(function(a, b) {
+      const compoundA = data.compounds[a] || {}
+      const compoundB = data.compounds[b] || {}
+      return String(compoundA.display_name || a).localeCompare(String(compoundB.display_name || b))
+    })
+
+  if (!filteredNames.length) return null
 
   const alert = new Alert()
   alert.title = prompt || "Choose compound"
-  for (const name of names) {
+  for (const name of filteredNames) {
     const c = data.compounds[name]
-    const base = c.display_name || titleCase(name)
-    alert.addAction(multiCategory ? `${base} (${c.category || DEFAULT_CATEGORY})` : base)
+    alert.addAction(c.display_name || titleCase(name))
   }
   alert.addCancelAction("Cancel")
   const idx = await alert.presentSheet()
   if (idx === -1) return null
-  return names[idx]
+  return filteredNames[idx]
 }
 
 async function promptLogInjection(data) {

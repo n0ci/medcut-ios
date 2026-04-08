@@ -171,8 +171,8 @@ test('dashboard forms support class-first and typed substance filtering', () => 
 
   assert.match(
     source,
-    /id="log-search" type="search" placeholder="Type to filter substances" oninput="handlePickerSearchChange\('log'\)"/,
-    'Expected Quick Log to expose typed substance filtering.'
+    /id="log-search" type="search" placeholder="Type to search substances"[\s\S]*?onfocus="openCompoundDropdown\('log'\)"[\s\S]*?oninput="handlePickerSearchChange\('log'\)"[\s\S]*?onkeydown="handlePickerSearchKeydown\('log', event\)"/,
+    'Expected Quick Log to expose a typeahead substance search that opens a dropdown while typing.'
   );
 
   assert.match(
@@ -201,20 +201,20 @@ test('dashboard forms support class-first and typed substance filtering', () => 
 
   assert.match(
     source,
-    /<label class="field-label" for="log-category">Class<\/label>[\s\S]*?<label class="field-label" for="log-compound">Substance<\/label>/,
-    'Expected dashboard pickers to use explicit labels for class and substance selection.'
+    /<label class="field-label" for="log-category">Class<\/label>[\s\S]*?<label class="field-label" for="log-search">Substance<\/label>/,
+    'Expected dashboard pickers to use explicit labels for class and typeahead substance selection.'
   );
 
   assert.match(
     source,
-    /class="compound-picker"[\s\S]*?id="log-compound-current" class="compound-current"[\s\S]*?id="log-compound-results" class="compound-results"/,
-    'Expected Quick Log substance picking to use a selected-state card plus an in-form results list.'
+    /class="compound-picker"[\s\S]*?id="log-compound-menu" class="compound-dropdown"[\s\S]*?id="log-compound-selected" class="compound-selected"/,
+    'Expected Quick Log substance picking to use a typeahead dropdown plus a selected-state summary.'
   );
 
   assert.match(
     source,
-    /class="compound-picker"[\s\S]*?id="schedule-compound-current" class="compound-current"[\s\S]*?id="schedule-compound-results" class="compound-results"/,
-    'Expected schedule form substance picking to reuse the same search-and-results surface.'
+    /class="compound-picker"[\s\S]*?id="schedule-compound-menu" class="compound-dropdown"[\s\S]*?id="schedule-compound-selected" class="compound-selected"/,
+    'Expected schedule form substance picking to reuse the same dropdown-plus-summary surface.'
   );
 
   assert.match(
@@ -226,13 +226,25 @@ test('dashboard forms support class-first and typed substance filtering', () => 
   assert.match(
     source,
     /function renderCompoundPicker\(kind, compounds\)/,
-    'Expected a dedicated renderer for the visible substance picker surface.'
+    'Expected a dedicated renderer for the visible substance typeahead surface.'
   );
 
   assert.match(
     source,
     /function selectCompoundOption\(kind, compoundName, options\)/,
     'Expected substance selection to be handled through an explicit picker helper.'
+  );
+
+  assert.match(
+    source,
+    /function openCompoundDropdown\(kind\)/,
+    'Expected substance typeahead to expose explicit dropdown-open behavior.'
+  );
+
+  assert.match(
+    source,
+    /document\.addEventListener\('click', function\(event\) \{[\s\S]*?closest\('\.compound-typeahead'\)[\s\S]*?closeAllCompoundDropdowns\(\);/,
+    'Expected substance dropdowns to close when tapping outside the typeahead control.'
   );
 
   assert.match(
@@ -244,7 +256,7 @@ test('dashboard forms support class-first and typed substance filtering', () => 
   assert.match(
     source,
     /const button = document\.createElement\('button'\);[\s\S]*?button\.className = 'compound-option' \+ \(compound\.name === currentName \? ' active' : ''\);[\s\S]*?nameNode\.textContent = String\(compound\.display_name \|\| compound\.name\);/,
-    'Expected substance results to be rendered as explicit tappable rows with selected-state styling.'
+    'Expected substance dropdown results to be rendered as explicit tappable rows with selected-state styling.'
   );
 
   assert.match(
@@ -345,14 +357,14 @@ test('status cards and picker surfaces can shrink to the viewport without overfl
 
   assert.match(
     source,
-    /\.compound-current \{[\s\S]*?min-width: 0;[\s\S]*?padding: 10px 12px;/,
-    'Expected the selected-substance card to stay shrinkable on narrow screens.'
+    /\.compound-selected \{[\s\S]*?min-width: 0;[\s\S]*?padding: 10px 12px;/,
+    'Expected the selected-substance summary to stay shrinkable on narrow screens.'
   );
 
   assert.match(
     source,
-    /\.compound-results \{[\s\S]*?max-height: 220px;[\s\S]*?overflow: auto;[\s\S]*?min-width: 0;/,
-    'Expected the substance result list to stay scrollable within the form instead of overflowing the viewport.'
+    /\.compound-dropdown \{[\s\S]*?position: absolute;[\s\S]*?max-height: 220px;[\s\S]*?overflow: auto;[\s\S]*?min-width: 0;/,
+    'Expected the substance dropdown to stay scrollable and layered above the form instead of overflowing the viewport.'
   );
 });
 
@@ -433,8 +445,14 @@ test('entry form controls are responsive and can shrink without overflow', () =>
 
   assert.match(
     source,
+    /\.compound-search-shell input \{[\s\S]*?width: 100%;[\s\S]*?min-width: 0;[\s\S]*?border: 0;[\s\S]*?background: transparent;[\s\S]*?padding: 0;/,
+    'Expected the visible substance input to inherit the form chrome from its wrapper instead of using another nested input box.'
+  );
+
+  assert.match(
+    source,
     /\.compound-option \{[\s\S]*?width: 100%;[\s\S]*?text-align: left;[\s\S]*?font: inherit;/,
-    'Expected visible substance options to behave like full-width mobile list rows rather than cramped dropdown items.'
+    'Expected dropdown substance options to behave like full-width mobile list rows rather than cramped dropdown items.'
   );
 
   assert.match(

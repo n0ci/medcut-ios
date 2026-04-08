@@ -2241,9 +2241,27 @@ function renderDashboardHTML(appName, payloadJson) {
     display: none;
   }
   .compound-picker {
+    display: grid;
     gap: 8px;
   }
-  .compound-current {
+  .compound-typeahead {
+    position: relative;
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+  }
+  .compound-search-shell {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.14);
+    background: rgba(255,255,255,0.07);
+    padding: 10px 12px;
+  }
+  .compound-selected {
     display: grid;
     gap: 3px;
     min-width: 0;
@@ -2252,39 +2270,53 @@ function renderDashboardHTML(appName, payloadJson) {
     border: 1px solid rgba(255,255,255,0.12);
     background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
   }
-  .compound-current-kicker {
+  .compound-selected.empty {
+    border-style: dashed;
+    background: rgba(255,255,255,0.03);
+  }
+  .compound-selected-kicker {
     font-size: 10px;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--muted);
   }
-  .compound-current-name {
+  .compound-selected-name {
     font-size: 14px;
     font-weight: 700;
     line-height: 1.2;
     color: var(--text);
     overflow-wrap: anywhere;
   }
-  .compound-current-meta {
+  .compound-selected-meta {
     font-size: 11px;
     color: var(--muted);
     overflow-wrap: anywhere;
   }
-  .compound-results-meta {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
-    min-width: 0;
-    color: var(--muted);
-    font-size: 11px;
-  }
-  .compound-results {
-    display: grid;
+  .compound-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    z-index: 8;
     gap: 6px;
     max-height: 220px;
     overflow: auto;
     min-width: 0;
+    padding: 8px;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(8, 18, 29, 0.96);
+    box-shadow: 0 16px 30px rgba(1, 8, 16, 0.45);
+    backdrop-filter: blur(10px);
+  }
+  .compound-dropdown.open {
+    display: grid;
+  }
+  .compound-dropdown-note {
+    font-size: 11px;
+    color: var(--muted);
+    padding: 0 2px 2px;
   }
   .compound-option,
   .compound-empty {
@@ -2319,12 +2351,6 @@ function renderDashboardHTML(appName, payloadJson) {
     font-size: 11px;
     color: var(--muted);
     overflow-wrap: anywhere;
-  }
-  .compound-results-note {
-    font-size: 11px;
-    color: var(--muted);
-    text-align: center;
-    padding: 4px 6px 0;
   }
   .compound-empty {
     padding: 12px;
@@ -2433,6 +2459,21 @@ function renderDashboardHTML(appName, payloadJson) {
   }
   .entry-card input {
     line-height: 1.25;
+  }
+  .compound-search-shell input {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    border: 0;
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    margin: 0;
+  }
+  .compound-search-shell input::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
   }
   .native-temporal-shell {
     display: flex;
@@ -2743,18 +2784,16 @@ function renderDashboardHTML(appName, payloadJson) {
                     <option value="all">All classes</option>
                   </select>
                 </div>
-                <div class="field-stack">
-                  <label class="field-label" for="log-search">Search</label>
-                  <input id="log-search" type="search" placeholder="Type to filter substances" oninput="handlePickerSearchChange('log')" />
-                </div>
-              </div>
-              <div class="field-stack">
-                <label class="field-label" for="log-compound">Substance</label>
                 <div class="compound-picker">
-                  <select id="log-compound" class="compound-native" required tabindex="-1" aria-hidden="true"></select>
-                  <div id="log-compound-current" class="compound-current" aria-live="polite"></div>
-                  <div id="log-compound-results-meta" class="compound-results-meta"></div>
-                  <div id="log-compound-results" class="compound-results"></div>
+                  <div class="compound-typeahead">
+                    <label class="field-label" for="log-search">Substance</label>
+                    <div class="compound-search-shell">
+                      <input id="log-search" type="search" placeholder="Type to search substances" autocomplete="off" autocapitalize="none" spellcheck="false" onfocus="openCompoundDropdown('log')" oninput="handlePickerSearchChange('log')" onkeydown="handlePickerSearchKeydown('log', event)" />
+                    </div>
+                    <select id="log-compound" class="compound-native" required tabindex="-1" aria-hidden="true"></select>
+                    <div id="log-compound-menu" class="compound-dropdown"></div>
+                  </div>
+                  <div id="log-compound-selected" class="compound-selected" aria-live="polite"></div>
                 </div>
               </div>
             </div>
@@ -2804,18 +2843,16 @@ function renderDashboardHTML(appName, payloadJson) {
                     <option value="all">All classes</option>
                   </select>
                 </div>
-                <div class="field-stack">
-                  <label class="field-label" for="schedule-search">Search</label>
-                  <input id="schedule-search" type="search" placeholder="Type to filter substances" oninput="handlePickerSearchChange('schedule')" />
-                </div>
-              </div>
-              <div class="field-stack">
-                <label class="field-label" for="schedule-compound">Substance</label>
                 <div class="compound-picker">
-                  <select id="schedule-compound" class="compound-native" required tabindex="-1" aria-hidden="true"></select>
-                  <div id="schedule-compound-current" class="compound-current" aria-live="polite"></div>
-                  <div id="schedule-compound-results-meta" class="compound-results-meta"></div>
-                  <div id="schedule-compound-results" class="compound-results"></div>
+                  <div class="compound-typeahead">
+                    <label class="field-label" for="schedule-search">Substance</label>
+                    <div class="compound-search-shell">
+                      <input id="schedule-search" type="search" placeholder="Type to search substances" autocomplete="off" autocapitalize="none" spellcheck="false" onfocus="openCompoundDropdown('schedule')" oninput="handlePickerSearchChange('schedule')" onkeydown="handlePickerSearchKeydown('schedule', event)" />
+                    </div>
+                    <select id="schedule-compound" class="compound-native" required tabindex="-1" aria-hidden="true"></select>
+                    <div id="schedule-compound-menu" class="compound-dropdown"></div>
+                  </div>
+                  <div id="schedule-compound-selected" class="compound-selected" aria-live="polite"></div>
                 </div>
               </div>
             </div>
@@ -2924,6 +2961,10 @@ function renderDashboardHTML(appName, payloadJson) {
       log: { category: 'all', query: '' },
       schedule: { category: 'all', query: '' }
     },
+    openCompoundMenus: {
+      log: false,
+      schedule: false
+    },
     activePanel: Array.isArray(payload.rows) && payload.rows.length ? '' : 'log',
     toastTimer: null
   };
@@ -3007,7 +3048,7 @@ function renderDashboardHTML(appName, payloadJson) {
   }
 
   function syncPickerToCompound(kind, compoundName) {
-    const compound = payload.compounds.find(function(item) { return item.name === compoundName; });
+    const compound = findCompoundByName(compoundName);
     if (!compound) return;
     if (!state.pickerFilters[kind]) state.pickerFilters[kind] = { category: 'all', query: '' };
     state.pickerFilters[kind].category = compound.category || BROWSER_DEFAULT_CATEGORY;
@@ -3017,10 +3058,9 @@ function renderDashboardHTML(appName, payloadJson) {
 
   function renderCompoundPicker(kind, compounds) {
     const select = document.getElementById(kind + '-compound');
-    const currentRoot = document.getElementById(kind + '-compound-current');
-    const metaRoot = document.getElementById(kind + '-compound-results-meta');
-    const resultsRoot = document.getElementById(kind + '-compound-results');
-    if (!select || !currentRoot || !metaRoot || !resultsRoot) return;
+    const selectedRoot = document.getElementById(kind + '-compound-selected');
+    const menuRoot = document.getElementById(kind + '-compound-menu');
+    if (!select || !selectedRoot || !menuRoot) return;
 
     const allMatches = Array.isArray(compounds) ? compounds.slice() : compoundsForPicker(kind);
     const currentName = String(select.value || '');
@@ -3037,49 +3077,50 @@ function renderDashboardHTML(appName, payloadJson) {
       }).slice(0, MAX_COMPOUND_MATCHES);
     }
 
-    currentRoot.innerHTML = '';
-    const currentKicker = document.createElement('div');
-    currentKicker.className = 'compound-current-kicker';
-    currentKicker.textContent = currentCompound ? 'Selected substance' : 'Choose a substance';
-    currentRoot.appendChild(currentKicker);
+    selectedRoot.innerHTML = '';
+    selectedRoot.classList.toggle('empty', !currentCompound);
 
-    const currentNameNode = document.createElement('div');
-    currentNameNode.className = 'compound-current-name';
-    currentNameNode.textContent = currentCompound
+    const selectedKicker = document.createElement('div');
+    selectedKicker.className = 'compound-selected-kicker';
+    selectedKicker.textContent = currentCompound ? 'Selected substance' : 'No substance selected';
+    selectedRoot.appendChild(selectedKicker);
+
+    const selectedNameNode = document.createElement('div');
+    selectedNameNode.className = 'compound-selected-name';
+    selectedNameNode.textContent = currentCompound
       ? String(currentCompound.display_name || currentCompound.name)
-      : 'No substance selected';
-    currentRoot.appendChild(currentNameNode);
+      : 'Type to search, then pick from the dropdown.';
+    selectedRoot.appendChild(selectedNameNode);
 
-    const currentMeta = document.createElement('div');
-    currentMeta.className = 'compound-current-meta';
-    currentMeta.textContent = currentCompound
+    const selectedMeta = document.createElement('div');
+    selectedMeta.className = 'compound-selected-meta';
+    selectedMeta.textContent = currentCompound
       ? categoryLabelFor(currentCompound.category) + ' · ' + String(currentCompound.route || 'unknown')
-      : 'Filter by class or search, then tap a result below.';
-    currentRoot.appendChild(currentMeta);
+      : 'Use the class filter and search field to narrow the list.';
+    selectedRoot.appendChild(selectedMeta);
 
-    metaRoot.innerHTML = '';
-    const countNode = document.createElement('span');
-    countNode.textContent = allMatches.length === 1 ? '1 match' : String(allMatches.length) + ' matches';
-    metaRoot.appendChild(countNode);
-
-    const hintNode = document.createElement('span');
-    if (!allMatches.length) {
-      hintNode.textContent = 'Try another class or search.';
-    } else if (allMatches.length > visibleMatches.length) {
-      hintNode.textContent = 'Showing top ' + visibleMatches.length;
-    } else {
-      hintNode.textContent = 'Tap to choose';
-    }
-    metaRoot.appendChild(hintNode);
-
-    resultsRoot.innerHTML = '';
-    if (!allMatches.length) {
-      const empty = document.createElement('div');
-      empty.className = 'compound-empty';
-      empty.textContent = 'No substances match the current class and search.';
-      resultsRoot.appendChild(empty);
+    menuRoot.innerHTML = '';
+    const isOpen = !!(state.openCompoundMenus && state.openCompoundMenus[kind]);
+    menuRoot.classList.toggle('open', isOpen);
+    if (!isOpen) {
       return;
     }
+
+    const note = document.createElement('div');
+    note.className = 'compound-dropdown-note';
+    if (!allMatches.length) {
+      note.textContent = 'No matches. Try another class or search.';
+      menuRoot.appendChild(note);
+      const empty = document.createElement('div');
+      empty.className = 'compound-empty';
+      empty.textContent = 'No substances match the current filters.';
+      menuRoot.appendChild(empty);
+      return;
+    }
+    note.textContent = allMatches.length > visibleMatches.length
+      ? 'Showing top ' + visibleMatches.length + ' of ' + allMatches.length + ' matches'
+      : (allMatches.length === 1 ? '1 match' : String(allMatches.length) + ' matches');
+    menuRoot.appendChild(note);
 
     visibleMatches.forEach(function(compound) {
       const button = document.createElement('button');
@@ -3101,15 +3142,31 @@ function renderDashboardHTML(appName, payloadJson) {
       button.addEventListener('click', function() {
         selectCompoundOption(kind, compound.name);
       });
-      resultsRoot.appendChild(button);
+      menuRoot.appendChild(button);
     });
+  }
 
-    if (allMatches.length > visibleMatches.length) {
-      const note = document.createElement('div');
-      note.className = 'compound-results-note';
-      note.textContent = 'Keep typing to narrow the full list.';
-      resultsRoot.appendChild(note);
-    }
+  function closeCompoundDropdown(kind) {
+    if (!state.openCompoundMenus) return;
+    state.openCompoundMenus[kind] = false;
+    renderCompoundPicker(kind, compoundsForPicker(kind));
+  }
+
+  function closeAllCompoundDropdowns(exceptKind) {
+    if (!state.openCompoundMenus) return;
+    ['log', 'schedule'].forEach(function(kind) {
+      if (kind === exceptKind) return;
+      if (!state.openCompoundMenus[kind]) return;
+      state.openCompoundMenus[kind] = false;
+      renderCompoundPicker(kind, compoundsForPicker(kind));
+    });
+  }
+
+  function openCompoundDropdown(kind) {
+    if (!state.openCompoundMenus) state.openCompoundMenus = { log: false, schedule: false };
+    closeAllCompoundDropdowns(kind);
+    state.openCompoundMenus[kind] = true;
+    renderCompoundPicker(kind, compoundsForPicker(kind));
   }
 
   function selectCompoundOption(kind, compoundName, options) {
@@ -3119,12 +3176,15 @@ function renderDashboardHTML(appName, payloadJson) {
 
     if (opts.alignFilters) {
       syncPickerToCompound(kind, compoundName);
-      syncPickerInputs(kind);
-      fillCompoundSelect(kind + '-compound', kind);
+    } else if (!state.pickerFilters[kind]) {
+      state.pickerFilters[kind] = { category: 'all', query: '' };
     }
-
-    select.value = compoundName;
-    renderCompoundPicker(kind, compoundsForPicker(kind));
+    if (opts.clearQuery !== false) {
+      state.pickerFilters[kind].query = '';
+    }
+    if (state.openCompoundMenus) state.openCompoundMenus[kind] = false;
+    syncPickerInputs(kind);
+    fillCompoundSelect(kind + '-compound', kind, { selectedName: compoundName });
 
     if (opts.remember !== false) {
       state.preferredCompound = compoundName;
@@ -3137,8 +3197,11 @@ function renderDashboardHTML(appName, payloadJson) {
     if (!select) return;
     const allowBlank = options && options.allowBlank;
     const blankLabel = options && options.blankLabel ? options.blankLabel : 'All substances';
+    const selectedName = options && Object.prototype.hasOwnProperty.call(options, 'selectedName')
+      ? options.selectedName
+      : select.value;
     const compounds = compoundsForPicker(kind);
-    const current = select.value;
+    const hasQuery = !!String((state.pickerFilters[kind] && state.pickerFilters[kind].query) || '').trim();
     select.innerHTML = allowBlank ? ('<option value="">' + blankLabel + '</option>') : '';
     compounds.forEach(function(c) {
       const opt = document.createElement('option');
@@ -3146,15 +3209,19 @@ function renderDashboardHTML(appName, payloadJson) {
       opt.textContent = (c.display_name || c.name) + ' (' + (c.category || 'general') + ')';
       select.appendChild(opt);
     });
-    const preferred = current && compounds.some(function(c) { return c.name === current; })
-      ? current
-      : state.preferredCompound;
-    if (preferred && compounds.some(function(c) { return c.name === preferred; })) {
+    const preferred = selectedName && compounds.some(function(c) { return c.name === selectedName; })
+      ? selectedName
+      : (!hasQuery && state.preferredCompound && compounds.some(function(c) { return c.name === state.preferredCompound; })
+        ? state.preferredCompound
+        : null);
+    if (preferred) {
       select.value = preferred;
-    } else if (!allowBlank && compounds.length) {
+    } else if (!allowBlank && compounds.length && !hasQuery) {
       select.value = compounds[0].name;
     } else if (allowBlank) {
       select.value = '';
+    } else {
+      select.selectedIndex = -1;
     }
     renderCompoundPicker(kind, compounds);
   }
@@ -3168,7 +3235,21 @@ function renderDashboardHTML(appName, payloadJson) {
     const input = document.getElementById(kind + '-search');
     if (!state.pickerFilters[kind]) state.pickerFilters[kind] = { category: 'all', query: '' };
     state.pickerFilters[kind].query = input ? input.value : '';
+    if (state.openCompoundMenus) state.openCompoundMenus[kind] = true;
     fillCompoundSelect(kind + '-compound', kind);
+  }
+
+  function handlePickerSearchKeydown(kind, event) {
+    if (!event) return;
+    if (event.key === 'Escape') {
+      closeCompoundDropdown(kind);
+      return;
+    }
+    if (event.key !== 'Enter') return;
+    const matches = compoundsForPicker(kind);
+    if (!matches.length) return;
+    event.preventDefault();
+    selectCompoundOption(kind, matches[0].name);
   }
 
   function setDefaultDateTimeInputs() {
@@ -3202,6 +3283,12 @@ function renderDashboardHTML(appName, payloadJson) {
   renderRecentCompounds();
   renderDiagnostics();
   consumeQueuedToast();
+
+  document.addEventListener('click', function(event) {
+    const target = event && event.target;
+    if (target && typeof target.closest === 'function' && target.closest('.compound-typeahead')) return;
+    closeAllCompoundDropdowns();
+  });
 
   const customDaysInput = document.getElementById('custom-days');
   if (customDaysInput) {

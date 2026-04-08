@@ -165,7 +165,7 @@ test('dashboard keeps only essential graph controls and simple ui preferences', 
 test('dashboard forms support class-first and typed substance filtering', () => {
   assert.match(
     source,
-    /id="log-category" onchange="handlePickerCategoryChange\('log'\)"/,
+    /id="log-category-chips" class="category-chip-row"/,
     'Expected Quick Log to expose class filtering.'
   );
 
@@ -177,7 +177,7 @@ test('dashboard forms support class-first and typed substance filtering', () => 
 
   assert.match(
     source,
-    /id="schedule-category" onchange="handlePickerCategoryChange\('schedule'\)"/,
+    /id="schedule-category-chips" class="category-chip-row"/,
     'Expected schedule form to expose class filtering.'
   );
 
@@ -203,6 +203,18 @@ test('dashboard forms support class-first and typed substance filtering', () => 
     source,
     /<label class="field-label" for="log-category">Class<\/label>[\s\S]*?<label class="field-label" for="log-compound">Substance<\/label>/,
     'Expected dashboard pickers to use explicit labels for class and substance selection.'
+  );
+
+  assert.match(
+    source,
+    /\.category-chip-row \{[\s\S]*?display: flex;[\s\S]*?flex-wrap: wrap;[\s\S]*?gap: 6px;/,
+    'Expected class pickers to render as chip rows instead of native selects.'
+  );
+
+  assert.match(
+    source,
+    /function renderCategoryChips\(kind\)/,
+    'Expected class chip rendering helper for dashboard pickers.'
   );
 });
 
@@ -379,7 +391,7 @@ test('entry form controls are responsive and can shrink without overflow', () =>
 
   assert.match(
     source,
-    /\.entry-card input\[type="date"\],[\s\S]*?width: 100%;[\s\S]*?width: -webkit-fill-available;[\s\S]*?display: inline-flex;[\s\S]*?-webkit-appearance: none;[\s\S]*?background: transparent;[\s\S]*?border: 0;[\s\S]*?padding: 0;/,
+    /\.entry-card input\[type="date"\],[\s\S]*?width: 100%;[\s\S]*?width: -webkit-fill-available;[\s\S]*?min-width: 0;[\s\S]*?display: inline-flex;[\s\S]*?-webkit-appearance: none;[\s\S]*?background: transparent;[\s\S]*?border: 0;[\s\S]*?padding: 0;/,
     'Expected date/time controls to override intrinsic WebView width.'
   );
 
@@ -393,6 +405,12 @@ test('entry form controls are responsive and can shrink without overflow', () =>
     source,
     /input\[type="date"\]::\-webkit-textfield-decoration-container,[\s\S]*?display: flex;[\s\S]*?min-width: 0;/,
     'Expected the native date/time decoration container to allow shrinking.'
+  );
+
+  assert.doesNotMatch(
+    source,
+    /::-webkit-datetime-edit|::-webkit-calendar-picker-indicator/,
+    'Expected stale temporal-input workaround rules to be removed once the shell-based fix is in place.'
   );
 
   assert.match(

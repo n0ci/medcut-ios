@@ -2216,6 +2216,15 @@ function renderDashboardHTML(appName, payloadJson) {
   .picker-toolbar .field-stack {
     min-width: 0;
   }
+  .category-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .category-chip-row .pill {
+    font-size: 12px;
+    padding: 7px 10px;
+  }
   .action-rail {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -2336,15 +2345,10 @@ function renderDashboardHTML(appName, payloadJson) {
   .entry-card input[type="time"] {
     width: 100%;
     width: -webkit-fill-available;
-    max-width: 100%;
-    max-width: -webkit-fill-available;
     min-width: 0;
     min-inline-size: 0;
-    inline-size: 100%;
-    max-inline-size: 100%;
     display: inline-flex;
     align-items: center;
-    min-height: 22px;
     box-sizing: border-box;
     overflow: hidden;
     font: inherit;
@@ -2355,17 +2359,11 @@ function renderDashboardHTML(appName, payloadJson) {
     border-radius: 0;
     padding: 0;
     margin: 0;
-    background-clip: padding-box;
   }
   .entry-card input[type="date"]::-webkit-date-and-time-value,
   .entry-card input[type="time"]::-webkit-date-and-time-value {
     min-width: 0;
     text-align: left;
-  }
-  .entry-card input[type="date"]::-webkit-datetime-edit,
-  .entry-card input[type="time"]::-webkit-datetime-edit {
-    min-width: 0;
-    padding: 0;
   }
   .entry-card input[type="date"]::-webkit-textfield-decoration-container,
   .entry-card input[type="time"]::-webkit-textfield-decoration-container {
@@ -2373,12 +2371,6 @@ function renderDashboardHTML(appName, payloadJson) {
     align-items: center;
     min-width: 0;
     padding: 0;
-  }
-  .entry-card input[type="date"]::-webkit-calendar-picker-indicator,
-  .entry-card input[type="time"]::-webkit-calendar-picker-indicator {
-    margin: 0 0 0 8px;
-    padding: 0;
-    opacity: 0.82;
   }
   .entry-card textarea {
     min-height: 52px;
@@ -2641,9 +2633,8 @@ function renderDashboardHTML(appName, payloadJson) {
               <div class="picker-toolbar">
                 <div class="field-stack">
                   <label class="field-label" for="log-category">Class</label>
-                  <select id="log-category" onchange="handlePickerCategoryChange('log')">
-                    <option value="all">All classes</option>
-                  </select>
+                  <input id="log-category" type="hidden" value="all">
+                  <div id="log-category-chips" class="category-chip-row"></div>
                 </div>
                 <div class="field-stack">
                   <label class="field-label" for="log-search">Search</label>
@@ -2697,9 +2688,8 @@ function renderDashboardHTML(appName, payloadJson) {
               <div class="picker-toolbar">
                 <div class="field-stack">
                   <label class="field-label" for="schedule-category">Class</label>
-                  <select id="schedule-category" onchange="handlePickerCategoryChange('schedule')">
-                    <option value="all">All classes</option>
-                  </select>
+                  <input id="schedule-category" type="hidden" value="all">
+                  <div id="schedule-category-chips" class="category-chip-row"></div>
                 </div>
                 <div class="field-stack">
                   <label class="field-label" for="schedule-search">Search</label>
@@ -2834,15 +2824,31 @@ function renderDashboardHTML(appName, payloadJson) {
 
   applySavedUiPrefs();
 
-  function fillCategorySelect(selectId) {
-    const select = document.getElementById(selectId);
-    if (!select) return;
-    select.innerHTML = '<option value="all">All classes</option>';
-    Array.from(categorySet).sort().forEach(function(category) {
-      const opt = document.createElement('option');
-      opt.value = category;
-      opt.textContent = browserTitleCase(category);
-      select.appendChild(opt);
+  function availableCategories() {
+    return ['all'].concat(Array.from(categorySet).sort());
+  }
+
+  function setPickerCategory(kind, category) {
+    if (!state.pickerFilters[kind]) state.pickerFilters[kind] = { category: 'all', query: '' };
+    state.pickerFilters[kind].category = category || 'all';
+    syncPickerInputs(kind);
+    fillCompoundSelect(kind + '-compound', kind);
+  }
+
+  function renderCategoryChips(kind) {
+    const root = document.getElementById(kind + '-category-chips');
+    if (!root) return;
+    const current = (state.pickerFilters[kind] || {}).category || 'all';
+    root.innerHTML = availableCategories().map(function(category) {
+      const label = category === 'all' ? 'All classes' : browserTitleCase(category);
+      const active = current === category ? ' active' : '';
+      return '<button class="pill' + active + '" type="button" data-picker-kind="' + kind + '" data-category="' + category + '">' + escapeHtmlText(label) + '</button>';
+    }).join('');
+
+    root.querySelectorAll('button[data-category]').forEach(function(button) {
+      button.addEventListener('click', function() {
+        setPickerCategory(kind, button.getAttribute('data-category') || 'all');
+      });
     });
   }
 
@@ -2871,6 +2877,7 @@ function renderDashboardHTML(appName, payloadJson) {
     const searchInput = document.getElementById(kind + '-search');
     if (categorySelect && categorySelect.value !== picker.category) categorySelect.value = picker.category;
     if (searchInput && searchInput.value !== picker.query) searchInput.value = picker.query;
+    renderCategoryChips(kind);
   }
 
   function syncPickerToCompound(kind, compoundName) {
@@ -2907,9 +2914,7 @@ function renderDashboardHTML(appName, payloadJson) {
 
   function handlePickerCategoryChange(kind) {
     const select = document.getElementById(kind + '-category');
-    if (!state.pickerFilters[kind]) state.pickerFilters[kind] = { category: 'all', query: '' };
-    state.pickerFilters[kind].category = select ? select.value : 'all';
-    fillCompoundSelect(kind + '-compound', kind);
+    setPickerCategory(kind, select ? select.value : 'all');
   }
 
   function handlePickerSearchChange(kind) {
@@ -2938,8 +2943,6 @@ function renderDashboardHTML(appName, payloadJson) {
   if (!state.preferredCompound && payload.compounds.length) {
     state.preferredCompound = payload.compounds[0].name;
   }
-  fillCategorySelect('log-category');
-  fillCategorySelect('schedule-category');
   syncPickerToCompound('log', state.preferredCompound);
   syncPickerToCompound('schedule', state.preferredCompound);
   syncPickerInputs('log');

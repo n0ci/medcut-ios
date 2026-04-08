@@ -46,10 +46,10 @@ Add a Scriptable widget and select MedCut.
 ## Hosted distribution model
 
 Raw files:
-- Script URL: https://raw.githubusercontent.com/n0ci/peptide-tracker-ios/main/MedCut.js
-- Dashboard module URL: https://raw.githubusercontent.com/n0ci/peptide-tracker-ios/main/MedCutDashboard.js
-- Starter medications URL: https://raw.githubusercontent.com/n0ci/peptide-tracker-ios/main/medications/peptides.json
-- Starter history URL: https://raw.githubusercontent.com/n0ci/peptide-tracker-ios/main/history/peptides.json
+- Script URL: https://raw.githubusercontent.com/n0ci/medcut-ios/main/MedCut.js
+- Dashboard module URL: https://raw.githubusercontent.com/n0ci/medcut-ios/main/MedCutDashboard.js
+- Starter medications URL: https://raw.githubusercontent.com/n0ci/medcut-ios/main/medications/peptides.json
+- Starter history URL: https://raw.githubusercontent.com/n0ci/medcut-ios/main/history/peptides.json
 
 Published shortcuts:
 - Install MedCut

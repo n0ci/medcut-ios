@@ -16,26 +16,26 @@ Goal: bootstrap script + starter data with one tap.
 
 Actions:
 1. URL
-   - https://raw.githubusercontent.com/n0ci/peptide-tracker-ios/main/MedCut.js
+   - https://raw.githubusercontent.com/n0ci/medcut-ios/main/MedCut.js
 2. Get Contents of URL
 3. Save File
    - Service: iCloud Drive
    - Path: Shortcuts/MedCut.js (temporary)
 4. URL
-   - https://raw.githubusercontent.com/n0ci/peptide-tracker-ios/main/MedCutDashboard.js
+   - https://raw.githubusercontent.com/n0ci/medcut-ios/main/MedCutDashboard.js
 5. Get Contents of URL
 6. Save File
    - Service: iCloud Drive
    - Path: Shortcuts/MedCutDashboard.js (temporary)
 7. URL
-   - https://raw.githubusercontent.com/n0ci/peptide-tracker-ios/main/medications/peptides.json
+   - https://raw.githubusercontent.com/n0ci/medcut-ios/main/medications/peptides.json
 8. Get Contents of URL
 9. Save File
    - Service: iCloud Drive
    - Path: Scriptable/medications/peptides.json
    - If file exists: Ask
 10. URL
-   - https://raw.githubusercontent.com/n0ci/peptide-tracker-ios/main/history/peptides.json
+   - https://raw.githubusercontent.com/n0ci/medcut-ios/main/history/peptides.json
 11. Get Contents of URL
 12. Save File
    - Service: iCloud Drive

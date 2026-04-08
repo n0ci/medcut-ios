@@ -11,21 +11,21 @@
 
 ## 2) Schema and migration checks
 
-- [ ] Current schema_version is 1 in medications/*.json and history/*.json starter files
+- [ ] Current schema_version is 1 in the auto-created medications/*.json and history/*.json starter files
 - [ ] Legacy injection records with dose field are normalized to dose_mg
 - [ ] Invalid records are handled safely (no crash)
 - [ ] Migrated data writes back to the correct category files in iCloud Drive (medications + history)
 
 ## 3) Distribution checks
 
+- [ ] Bootstrap helper points to latest Install_MedCut.js
 - [ ] Raw script URL points to latest MedCut.js
 - [ ] Raw script URL points to latest MedCutDashboard.js
-- [ ] Raw starter JSON URL points to latest medications/peptides.json
-- [ ] Raw starter JSON URL points to latest history/peptides.json
 - [ ] README links updated with current public shortcut URLs
 
 ## 4) Shortcut checks
 
+- [ ] Bootstrap helper installs MedCut.js and MedCutDashboard.js automatically
 - [ ] Install MedCut shortcut runs end-to-end on a clean device
 - [ ] Log Injection shortcut logs a record successfully
 - [ ] Optional category parameter routes logs to the expected category file

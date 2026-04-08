@@ -2,7 +2,7 @@
 
 This file is for maintainers and advanced users who want to build shortcuts manually.
 
-Most users should use the hosted public shortcut links in README.md.
+Most users do not need this file yet. The easiest install path is the bootstrap helper in [Install_MedCut.js](Install_MedCut.js).
 
 ## Required shortcuts
 
@@ -12,46 +12,30 @@ Most users should use the hosted public shortcut links in README.md.
 
 ## 1) Install MedCut shortcut
 
-Goal: bootstrap script + starter data with one tap.
+Goal: bootstrap the installer helper and launch MedCut.
 
 Actions:
 1. URL
-   - https://raw.githubusercontent.com/n0ci/medcut-ios/main/MedCut.js
+   - https://raw.githubusercontent.com/n0ci/medcut-ios/main/Install_MedCut.js
 2. Get Contents of URL
 3. Save File
    - Service: iCloud Drive
-   - Path: Shortcuts/MedCut.js (temporary)
-4. URL
-   - https://raw.githubusercontent.com/n0ci/medcut-ios/main/MedCutDashboard.js
-5. Get Contents of URL
-6. Save File
-   - Service: iCloud Drive
-   - Path: Shortcuts/MedCutDashboard.js (temporary)
-7. URL
-   - https://raw.githubusercontent.com/n0ci/medcut-ios/main/medications/peptides.json
-8. Get Contents of URL
-9. Save File
-   - Service: iCloud Drive
-   - Path: Scriptable/medications/peptides.json
-   - If file exists: Ask
-10. URL
-   - https://raw.githubusercontent.com/n0ci/medcut-ios/main/history/peptides.json
-11. Get Contents of URL
-12. Save File
-   - Service: iCloud Drive
-   - Path: Scriptable/history/peptides.json
-   - If file exists: Ask
-13. Create Text
+   - Path: Scriptable/Install_MedCut.js
+4. Run Script (Scriptable)
+   - Script: Install_MedCut
+   - Input: None
+5. Create Text
    - MedCut
-14. Run Script (Scriptable)
+6. Run Script (Scriptable)
    - Script: MedCut
    - Input: {"action":"dashboard"}
-15. Show Notification
+7. Show Notification
    - MedCut installed
 
 Notes:
-- iOS Shortcuts cannot always write directly into Scriptable app scripts in all setups.
-- If your setup cannot write the script automatically, fall back to opening the raw script URL and sharing into Scriptable.
+- The shortcut only needs to install and run the bootstrap helper.
+- The bootstrap helper then downloads and installs MedCut.js and MedCutDashboard.js automatically.
+- MedCut creates the starter `medications/` and `history/` files the first time it runs, so the shortcut does not need to copy JSON files.
 
 ## 2) Log Injection shortcut
 

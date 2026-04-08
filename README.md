@@ -31,25 +31,25 @@ Install Scriptable from the App Store.
 ### 2. Run Install MedCut shortcut
 - Install shortcut: https://www.icloud.com/shortcuts/REPLACE_INSTALL_SHORTCUT_ID
 
-### 3. Install Log Injection shortcut
-- Log Injection shortcut: https://www.icloud.com/shortcuts/REPLACE_LOG_SHORTCUT_ID
+The shortcut downloads [Install_MedCut.js](Install_MedCut.js), runs it, and installs the main MedCut script plus the dashboard module automatically.
 
-### 4. Install Open Tracker shortcut
-- Open Tracker shortcut: https://www.icloud.com/shortcuts/REPLACE_OPEN_SHORTCUT_ID
+### 3. Open MedCut once
+Run MedCut in Scriptable one time to grant permissions and let it create the starter data files automatically.
 
-### 5. Open MedCut once
-Run MedCut in Scriptable one time to grant permissions.
+### 4. Optional: add shortcuts later
+You can add Shortcuts for faster logging and opening the dashboard after the app is running. They are optional.
 
-### 6. Optional widget
+### 5. Optional widget
 Add a Scriptable widget and select MedCut.
 
 ## Hosted distribution model
 
 Raw files:
+- Bootstrap helper: https://raw.githubusercontent.com/n0ci/medcut-ios/main/Install_MedCut.js
 - Script URL: https://raw.githubusercontent.com/n0ci/medcut-ios/main/MedCut.js
 - Dashboard module URL: https://raw.githubusercontent.com/n0ci/medcut-ios/main/MedCutDashboard.js
-- Starter medications URL: https://raw.githubusercontent.com/n0ci/medcut-ios/main/medications/peptides.json
-- Starter history URL: https://raw.githubusercontent.com/n0ci/medcut-ios/main/history/peptides.json
+
+No manual data-file install is required. MedCut creates the starter `medications/` and `history/` files on first launch.
 
 Published shortcuts:
 - Install MedCut
@@ -60,8 +60,7 @@ Published shortcuts:
 Install behavior requirements:
 - Ensure script is created/updated in Scriptable as `MedCut`
 - Ensure dashboard module is created/updated in Scriptable as `MedCutDashboard`
-- Ensure at least one medication file exists in `iCloud Drive/Scriptable/medications/`.
-- Required naming: `<category>.json` inside the medications folder (example: `peptides.json`, `painkillers.json`).
+- Required naming for auto-created data files: `<category>.json` inside `medications/` and `history/` (example: `peptides.json`, `painkillers.json`)
 - If direct script install is blocked by iOS behavior, use fallback handoff (open raw script and share to Scriptable)
 
 ## Shortcut input contract
@@ -130,11 +129,12 @@ The script auto-discovers all `<category>.json` files across both folders and me
 
 ## Which data file should I use?
 
-- `medications/peptides.json`: use this for peptide tracking
-- `medications/painkillers.json`: use this for painkiller tracking (example)
+- MedCut creates starter files automatically on first launch.
+- If you want to edit presets later, use `medications/peptides.json` for peptide tracking and `medications/painkillers.json` for the example painkiller category.
 
 ## Repo layout
 
+- `Install_MedCut.js`: bootstrap installer that downloads the app scripts automatically
 - `MedCut.js`: main Scriptable app
 - `MedCutDashboard.js`: dashboard frontend module (WebView HTML/CSS/JS)
 - `medications/peptides.json`: category template (peptides)

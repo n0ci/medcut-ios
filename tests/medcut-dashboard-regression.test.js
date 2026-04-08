@@ -165,7 +165,7 @@ test('dashboard keeps only essential graph controls and simple ui preferences', 
 test('dashboard forms support class-first and typed substance filtering', () => {
   assert.match(
     source,
-    /id="log-category-chips" class="category-chip-row"/,
+    /id="log-category-trigger" class="category-picker-trigger"/,
     'Expected Quick Log to expose class filtering.'
   );
 
@@ -177,7 +177,7 @@ test('dashboard forms support class-first and typed substance filtering', () => 
 
   assert.match(
     source,
-    /id="schedule-category-chips" class="category-chip-row"/,
+    /id="schedule-category-trigger" class="category-picker-trigger"/,
     'Expected schedule form to expose class filtering.'
   );
 
@@ -207,20 +207,38 @@ test('dashboard forms support class-first and typed substance filtering', () => 
 
   assert.match(
     source,
-    /\.category-chip-row \{[\s\S]*?display: flex;[\s\S]*?flex-wrap: wrap;[\s\S]*?gap: 6px;/,
-    'Expected class pickers to render as chip rows instead of native selects.'
+    /\.category-picker \{[\s\S]*?position: relative;[\s\S]*?min-width: 0;/,
+    'Expected class pickers to render through a dedicated custom picker container.'
   );
 
   assert.match(
     source,
-    /function renderCategoryChips\(kind\)/,
-    'Expected class chip rendering helper for dashboard pickers.'
+    /function renderCategoryPicker\(kind\)/,
+    'Expected custom class picker rendering helper for dashboard filters.'
   );
 
   assert.match(
     source,
-    /\.category-chip-row \.pill \{[\s\S]*?flex: 0 0 auto;[\s\S]*?min-width: max-content;[\s\S]*?white-space: nowrap;/,
-    'Expected class chips to keep their content width so labels are not flex-compressed.'
+    /\.category-picker-trigger \{[\s\S]*?display: flex;[\s\S]*?justify-content: space-between;[\s\S]*?cursor: pointer;/,
+    'Expected class picker trigger to use a dedicated non-native control surface.'
+  );
+
+  assert.match(
+    source,
+    /\.category-picker-menu\.open \{[\s\S]*?display: grid;[\s\S]*?gap: 4px;/,
+    'Expected class picker to open an in-place custom chooser menu.'
+  );
+
+  assert.match(
+    source,
+    /<div class="category-picker-option' \+ active \+ '" role="button" tabindex="0" data-picker-kind="' \+ kind \+ '" data-category="' \+ category \+ '">/,
+    'Expected class menu options to render through dedicated custom picker markup.'
+  );
+
+  assert.match(
+    source,
+    /document\.addEventListener\('click', function\(event\) \{[\s\S]*?closest\('\.category-picker'\)[\s\S]*?closeCategoryMenus\(\);/,
+    'Expected class pickers to close when tapping outside the custom picker.'
   );
 });
 

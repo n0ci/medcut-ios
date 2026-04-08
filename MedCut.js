@@ -1295,14 +1295,6 @@ function renderDashboardHTML(appName, payloadJson) {
     draw();
   }
 
-  function escapeSingleQuotedJs(value) {
-    return String(value)
-      .replace(/\\/g, '\\\\')
-      .replace(/'/g, "\\'")
-      .replace(/\r/g, '\\r')
-      .replace(/\n/g, '\\n');
-  }
-
   function escapeHtmlText(value) {
     return String(value)
       .replace(/&/g, '&amp;')
@@ -1332,13 +1324,20 @@ function renderDashboardHTML(appName, payloadJson) {
     });
     root.innerHTML = filtered.map(c => {
       const checked = state.enabled.includes(c.name) ? 'checked' : '';
-      const safeName = escapeSingleQuotedJs(c.name);
+      const safeName = escapeHtmlText(c.name);
       const color = safeColor(c.color);
       const displayName = escapeHtmlText(c.display_name);
-      return '<label><input type="checkbox" ' + checked + ' onchange="toggleCompound(\'' + safeName + '\')">'
+      return '<label><input type="checkbox" ' + checked + ' data-compound="' + safeName + '">'
         + '<span class="dot" style="background:' + color + '"></span>'
         + displayName + '</label>';
     }).join('');
+
+    const checkboxes = root.querySelectorAll('input[type="checkbox"][data-compound]');
+    checkboxes.forEach(function(cb) {
+      cb.addEventListener('change', function() {
+        toggleCompound(cb.getAttribute('data-compound') || '');
+      });
+    });
   }
 
   function draw() {

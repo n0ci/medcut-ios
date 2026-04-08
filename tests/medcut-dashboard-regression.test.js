@@ -125,16 +125,10 @@ test('dashboard keeps only essential graph controls and simple ui preferences', 
     'Advanced control wiring should be removed from the simplified dashboard.'
   );
 
-  assert.match(
+  assert.doesNotMatch(
     source,
-    /id="focus-compound" class="focus-select" onchange="setFocusCompound\(this\.value\)"/,
-    'Expected the remaining visible graph control to be the focus selector.'
-  );
-
-  assert.match(
-    source,
-    /id="focus-category" onchange="handlePickerCategoryChange\('focus'\)"/,
-    'Expected class-first filtering ahead of graph substance selection.'
+    /focus-compound|setFocusCompound\(|focus-category|focus-search/,
+    'Focus graph controls should be removed from the simplified dashboard.'
   );
 
   assert.doesNotMatch(
@@ -177,7 +171,7 @@ test('dashboard forms support class-first and typed substance filtering', () => 
 
   assert.match(
     source,
-    /id="log-search" type="search" placeholder="Filter substance" oninput="handlePickerSearchChange\('log'\)"/,
+    /id="log-search" type="search" placeholder="Type to filter substances" oninput="handlePickerSearchChange\('log'\)"/,
     'Expected Quick Log to expose typed substance filtering.'
   );
 
@@ -204,6 +198,12 @@ test('dashboard forms support class-first and typed substance filtering', () => 
     /\.picker-toolbar > \* \{\s*min-width: 0;/,
     'Expected picker toolbar children to be shrinkable so class labels do not clip.'
   );
+
+  assert.match(
+    source,
+    /<label class="field-label" for="log-category">Class<\/label>[\s\S]*?<label class="field-label" for="log-compound">Substance<\/label>/,
+    'Expected dashboard pickers to use explicit labels for class and substance selection.'
+  );
 });
 
 test('header uses compact count chips and status cards expand for details', () => {
@@ -229,6 +229,18 @@ test('header uses compact count chips and status cards expand for details', () =
     source,
     /<div class="small">Confidence: /,
     'Expected confidence metadata to move into the expandable details section.'
+  );
+
+  assert.match(
+    source,
+    /function currentActiveStatusCompoundNames\(\)[\s\S]*?return compoundHasVisibleSignal\(compound\);/,
+    'Expected status cards to use active compounds with visible signal, independent of graph focus.'
+  );
+
+  assert.match(
+    source,
+    /const visibleNames = currentActiveStatusCompoundNames\(\);/,
+    'Expected Current Status cards to be scoped by active compounds rather than the focused graph subset.'
   );
 });
 
@@ -261,6 +273,26 @@ test('dashboard includes in-app forms for injection logging and schedule creatio
     source,
     /action:\s*editingId \? 'edit_protocol' : 'add_protocol'/,
     'Expected schedule form submission to switch between create and edit protocol actions.'
+  );
+});
+
+test('status cards and picker surfaces can shrink to the viewport without overflow', () => {
+  assert.match(
+    source,
+    /\.card \{[\s\S]*?min-width: 0;[\s\S]*?max-width: 100%;[\s\S]*?box-sizing: border-box;[\s\S]*?overflow: hidden;/,
+    'Expected status cards to stay within the viewport on narrow screens.'
+  );
+
+  assert.match(
+    source,
+    /\.big \{[\s\S]*?overflow-wrap: anywhere;/,
+    'Expected large status values to wrap instead of forcing horizontal overflow.'
+  );
+
+  assert.match(
+    source,
+    /\.card-topline \{[\s\S]*?min-width: 0;/,
+    'Expected card toplines to allow inner content to shrink on narrow screens.'
   );
 });
 
@@ -329,8 +361,8 @@ test('entry form controls are responsive and can shrink without overflow', () =>
 
   assert.match(
     source,
-    /\.entry-row\.compact-datetime \{\s*grid-template-columns: minmax\(0, 1\.15fr\) minmax\(0, 0\.85fr\);/,
-    'Expected compact datetime rows so date and time controls do not waste horizontal space.'
+    /\.entry-row\.compact-datetime \{\s*grid-template-columns: 1fr;/,
+    'Expected date and time controls to stack vertically for reliable mobile layout.'
   );
 
   assert.match(
@@ -343,6 +375,12 @@ test('entry form controls are responsive and can shrink without overflow', () =>
     source,
     /\.entry-card input\[type="date"\],[\s\S]*?min-inline-size: 0;[\s\S]*?inline-size: 100%;/,
     'Expected date/time controls to override intrinsic WebView width.'
+  );
+
+  assert.match(
+    source,
+    /<label class="field-label" for="log-date">Date<\/label>[\s\S]*?<input id="log-date" type="date" required>[\s\S]*?<label class="field-label" for="log-time">Time<\/label>[\s\S]*?<input id="log-time" type="time" required>/,
+    'Expected Quick Log date and time controls to be explicit labeled fields.'
   );
 
   assert.match(
@@ -417,12 +455,6 @@ test('graph controls remain below chart and actions open a management workspace'
 
   assert.match(
     source,
-    /id="focus-compound" class="focus-select" onchange="setFocusCompound\(this\.value\)"/,
-    'Expected a visible focus-compound control near the graph.'
-  );
-
-  assert.match(
-    source,
     /class="action-rail"/,
     'Expected a compact action rail below the graph.'
   );
@@ -479,6 +511,12 @@ test('graph controls remain below chart and actions open a management workspace'
     source,
     /id="custom-days" type="number"/,
     'Expected custom day window numeric control.'
+  );
+
+  assert.doesNotMatch(
+    source,
+    /Focus chart|focus-compound|setFocusCompound\(/,
+    'Expected graph focus UI and card actions to be removed.'
   );
 
 });

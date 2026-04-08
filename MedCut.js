@@ -2048,6 +2048,7 @@ function renderDashboardHTML(appName, payloadJson) {
     grid-template-columns: repeat(2,minmax(0,1fr));
     gap: 10px;
     margin: 8px 0 14px;
+    min-width: 0;
   }
   .section-title {
     margin: 16px 0 8px;
@@ -2063,6 +2064,10 @@ function renderDashboardHTML(appName, payloadJson) {
     padding: 14px;
     backdrop-filter: blur(10px);
     width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
     text-align: left;
     color: var(--text);
   }
@@ -2085,22 +2090,27 @@ function renderDashboardHTML(appName, payloadJson) {
     font-size: 22px;
     font-weight: 800;
     margin-top: 8px;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
   }
   .small {
     margin-top: 4px;
     font-size: 12px;
     color: var(--muted);
+    overflow-wrap: anywhere;
   }
   .card-topline {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 10px;
+    min-width: 0;
   }
   .card-expand {
     color: var(--muted);
     font-size: 11px;
     white-space: nowrap;
+    flex-shrink: 0;
   }
   .card-summary {
     margin-top: 4px;
@@ -2135,10 +2145,6 @@ function renderDashboardHTML(appName, payloadJson) {
     gap: 8px;
     margin: 0;
   }
-  .toolbar.secondary {
-    justify-content: space-between;
-    align-items: center;
-  }
   .pill, select {
     background: rgba(255,255,255,0.06);
     color: #fff;
@@ -2147,22 +2153,37 @@ function renderDashboardHTML(appName, payloadJson) {
     padding: 8px 12px;
     font-size: 13px;
   }
+  .field-stack {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+  }
+  .field-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--muted-strong);
+    text-transform: uppercase;
+  }
   select {
     display: block;
     inline-size: 100%;
     min-inline-size: 0;
     max-inline-size: 100%;
     box-sizing: border-box;
+    line-height: 1.25;
+    padding-left: 14px;
     -webkit-appearance: none;
     appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23bcd0e5' d='M1 1l4 4 4-4'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
-    background-position: right 12px center;
+    background-position: calc(100% - 12px) center;
     background-size: 10px 6px;
     padding-right: 32px;
     text-indent: 0;
     overflow: hidden;
     text-overflow: ellipsis;
+    background-clip: padding-box;
   }
   button.pill {
     cursor: pointer;
@@ -2175,9 +2196,6 @@ function renderDashboardHTML(appName, payloadJson) {
     text-decoration: none;
     display: inline-block;
   }
-  .focus-select {
-    min-width: 180px;
-  }
   .picker-stack {
     display: grid;
     gap: 8px;
@@ -2186,12 +2204,16 @@ function renderDashboardHTML(appName, payloadJson) {
     display: grid;
     grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
     gap: 8px;
+    align-items: start;
   }
   .picker-toolbar > * {
     min-width: 0;
   }
   .picker-toolbar input,
   .picker-toolbar select {
+    min-width: 0;
+  }
+  .picker-toolbar .field-stack {
     min-width: 0;
   }
   .action-rail {
@@ -2278,7 +2300,7 @@ function renderDashboardHTML(appName, payloadJson) {
     gap: 8px;
   }
   .entry-row.compact-datetime {
-    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    grid-template-columns: 1fr;
   }
   .entry-row > * {
     min-width: 0;
@@ -2297,11 +2319,15 @@ function renderDashboardHTML(appName, payloadJson) {
     padding: 8px 10px;
     font-size: 12px;
   }
+  .entry-card input {
+    line-height: 1.25;
+  }
   .entry-card input[type="date"],
   .entry-card input[type="time"] {
     min-inline-size: 0;
     inline-size: 100%;
     display: block;
+    min-height: 40px;
   }
   .entry-card textarea {
     min-height: 52px;
@@ -2495,8 +2521,6 @@ function renderDashboardHTML(appName, payloadJson) {
     .action-rail { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .entry-row { grid-template-columns: 1fr; }
     .picker-toolbar { grid-template-columns: 1fr; }
-    .toolbar.secondary { align-items: stretch; }
-    .focus-select { width: 100%; }
     .hero-status { text-align: left; max-width: none; }
   }
 </style>
@@ -2540,17 +2564,6 @@ function renderDashboardHTML(appName, payloadJson) {
         <button id="mode-concentration" class="pill" onclick="setMode('concentration')">Concentration</button>
       </div>
 
-      <div class="toolbar secondary">
-        <div class="picker-toolbar" style="flex:1">
-          <select id="focus-category" onchange="handlePickerCategoryChange('focus')">
-            <option value="all">All classes</option>
-          </select>
-          <input id="focus-search" type="search" placeholder="Filter substance" oninput="handlePickerSearchChange('focus')" />
-        </div>
-        <select id="focus-compound" class="focus-select" onchange="setFocusCompound(this.value)">
-          <option value="">All substances</option>
-        </select>
-      </div>
     </div>
 
     <div class="section-title">Actions</div>
@@ -2570,27 +2583,48 @@ function renderDashboardHTML(appName, payloadJson) {
           <h2>Quick Log</h2>
           <button class="pill workspace-dismiss" type="button" onclick="setActivePanel('', false)">Hide</button>
         </div>
-        <div class="workspace-copy">Save a new injection and return to the updated dashboard state.</div>
+        <div class="workspace-copy">Save a new log entry and return to the updated dashboard state.</div>
         <div id="entry-log" class="entry-card primary">
           <form onsubmit="submitLog(event)">
             <div class="picker-stack">
               <div class="picker-toolbar">
-                <select id="log-category" onchange="handlePickerCategoryChange('log')">
-                  <option value="all">All classes</option>
-                </select>
-                <input id="log-search" type="search" placeholder="Filter substance" oninput="handlePickerSearchChange('log')" />
+                <div class="field-stack">
+                  <label class="field-label" for="log-category">Class</label>
+                  <select id="log-category" onchange="handlePickerCategoryChange('log')">
+                    <option value="all">All classes</option>
+                  </select>
+                </div>
+                <div class="field-stack">
+                  <label class="field-label" for="log-search">Search</label>
+                  <input id="log-search" type="search" placeholder="Type to filter substances" oninput="handlePickerSearchChange('log')" />
+                </div>
               </div>
-              <select id="log-compound" required></select>
+              <div class="field-stack">
+                <label class="field-label" for="log-compound">Substance</label>
+                <select id="log-compound" required></select>
+              </div>
             </div>
             <div id="recent-compounds" class="recent-compounds"></div>
-            <input id="log-dose" type="number" min="0" step="0.01" placeholder="Dose mg" required>
-            <div class="entry-row compact-datetime">
-              <input id="log-date" type="date" required>
-              <input id="log-time" type="time" required>
+            <div class="field-stack">
+              <label class="field-label" for="log-dose">Dose</label>
+              <input id="log-dose" type="number" min="0" step="0.01" placeholder="Dose mg" required>
             </div>
-            <textarea id="log-notes" placeholder="Optional notes"></textarea>
+            <div class="entry-row compact-datetime">
+              <div class="field-stack">
+                <label class="field-label" for="log-date">Date</label>
+                <input id="log-date" type="date" required>
+              </div>
+              <div class="field-stack">
+                <label class="field-label" for="log-time">Time</label>
+                <input id="log-time" type="time" required>
+              </div>
+            </div>
+            <div class="field-stack">
+              <label class="field-label" for="log-notes">Notes</label>
+              <textarea id="log-notes" placeholder="Optional notes"></textarea>
+            </div>
             <div class="entry-actions">
-              <button id="log-submit" class="pill" type="submit">Save Injection</button>
+              <button id="log-submit" class="pill" type="submit">Save Entry</button>
               <button id="log-cancel-edit" class="pill" type="button" onclick="cancelLogEdit()" style="display:none">Cancel Edit</button>
             </div>
           </form>
@@ -2608,23 +2642,50 @@ function renderDashboardHTML(appName, payloadJson) {
           <form onsubmit="submitSchedule(event)">
             <div class="picker-stack">
               <div class="picker-toolbar">
-                <select id="schedule-category" onchange="handlePickerCategoryChange('schedule')">
-                  <option value="all">All classes</option>
-                </select>
-                <input id="schedule-search" type="search" placeholder="Filter substance" oninput="handlePickerSearchChange('schedule')" />
+                <div class="field-stack">
+                  <label class="field-label" for="schedule-category">Class</label>
+                  <select id="schedule-category" onchange="handlePickerCategoryChange('schedule')">
+                    <option value="all">All classes</option>
+                  </select>
+                </div>
+                <div class="field-stack">
+                  <label class="field-label" for="schedule-search">Search</label>
+                  <input id="schedule-search" type="search" placeholder="Type to filter substances" oninput="handlePickerSearchChange('schedule')" />
+                </div>
               </div>
-              <select id="schedule-compound" required></select>
+              <div class="field-stack">
+                <label class="field-label" for="schedule-compound">Substance</label>
+                <select id="schedule-compound" required></select>
+              </div>
             </div>
             <div class="entry-row">
-              <input id="schedule-dose" type="number" min="0" step="0.01" placeholder="Dose mg" required>
-              <input id="schedule-every" type="number" min="0.25" step="0.25" placeholder="Every days" value="7" required>
+              <div class="field-stack">
+                <label class="field-label" for="schedule-dose">Dose</label>
+                <input id="schedule-dose" type="number" min="0" step="0.01" placeholder="Dose mg" required>
+              </div>
+              <div class="field-stack">
+                <label class="field-label" for="schedule-every">Interval</label>
+                <input id="schedule-every" type="number" min="0.25" step="0.25" placeholder="Every days" value="7" required>
+              </div>
             </div>
             <div class="entry-row compact-datetime">
-              <input id="schedule-start-date" type="date" required>
-              <input id="schedule-start-time" type="time" required>
+              <div class="field-stack">
+                <label class="field-label" for="schedule-start-date">Start date</label>
+                <input id="schedule-start-date" type="date" required>
+              </div>
+              <div class="field-stack">
+                <label class="field-label" for="schedule-start-time">Start time</label>
+                <input id="schedule-start-time" type="time" required>
+              </div>
             </div>
-            <input id="schedule-occurrences" type="number" min="1" step="1" placeholder="Occurrences (optional)">
-            <textarea id="schedule-notes" placeholder="Optional notes"></textarea>
+            <div class="field-stack">
+              <label class="field-label" for="schedule-occurrences">Occurrences</label>
+              <input id="schedule-occurrences" type="number" min="1" step="1" placeholder="Occurrences (optional)">
+            </div>
+            <div class="field-stack">
+              <label class="field-label" for="schedule-notes">Notes</label>
+              <textarea id="schedule-notes" placeholder="Optional notes"></textarea>
+            </div>
             <div class="entry-actions">
               <button class="pill" type="submit">Save Schedule</button>
               <button id="schedule-cancel-edit" class="pill" type="button" onclick="cancelProtocolEdit()" style="display:none">Cancel Edit</button>
@@ -2694,7 +2755,6 @@ function renderDashboardHTML(appName, payloadJson) {
     mode: 'amount',
     historyDays: 30,
     historyPage: 0,
-    showMarkers: true,
     showTotal: false,
     showTrend: false,
     enabled: [],
@@ -2704,12 +2764,10 @@ function renderDashboardHTML(appName, payloadJson) {
     editInjectionId: null,
     editProtocolId: null,
     preferredCompound: null,
-    focusCompound: null,
     expandedCard: null,
     pickerFilters: {
       log: { category: 'all', query: '' },
-      schedule: { category: 'all', query: '' },
-      focus: { category: 'all', query: '' }
+      schedule: { category: 'all', query: '' }
     },
     activePanel: Array.isArray(payload.rows) && payload.rows.length ? '' : 'log',
     toastTimer: null
@@ -2782,7 +2840,7 @@ function renderDashboardHTML(appName, payloadJson) {
       opt.textContent = (c.display_name || c.name) + ' (' + (c.category || 'general') + ')';
       select.appendChild(opt);
     });
-    const preferred = kind === 'focus' ? state.focusCompound : state.preferredCompound;
+    const preferred = state.preferredCompound;
     if (preferred && compounds.some(function(c) { return c.name === preferred; })) {
       select.value = preferred;
     } else if (!allowBlank && compounds.length) {
@@ -2792,23 +2850,10 @@ function renderDashboardHTML(appName, payloadJson) {
     }
   }
 
-  function fillFocusCompoundSelect() {
-    fillCompoundSelect('focus-compound', 'focus', { allowBlank: true, blankLabel: 'All substances' });
-  }
-
   function handlePickerCategoryChange(kind) {
     const select = document.getElementById(kind + '-category');
     if (!state.pickerFilters[kind]) state.pickerFilters[kind] = { category: 'all', query: '' };
     state.pickerFilters[kind].category = select ? select.value : 'all';
-    if (kind === 'focus') {
-      fillFocusCompoundSelect();
-      if (state.focusCompound && !compoundsForPicker('focus').some(function(compound) { return compound.name === state.focusCompound; })) {
-        state.focusCompound = null;
-      }
-      saveUiPrefs();
-      draw(false);
-      return;
-    }
     fillCompoundSelect(kind + '-compound', kind);
   }
 
@@ -2816,15 +2861,6 @@ function renderDashboardHTML(appName, payloadJson) {
     const input = document.getElementById(kind + '-search');
     if (!state.pickerFilters[kind]) state.pickerFilters[kind] = { category: 'all', query: '' };
     state.pickerFilters[kind].query = input ? input.value : '';
-    if (kind === 'focus') {
-      fillFocusCompoundSelect();
-      if (state.focusCompound && !compoundsForPicker('focus').some(function(compound) { return compound.name === state.focusCompound; })) {
-        state.focusCompound = null;
-      }
-      saveUiPrefs();
-      draw(false);
-      return;
-    }
     fillCompoundSelect(kind + '-compound', kind);
   }
 
@@ -2849,15 +2885,12 @@ function renderDashboardHTML(appName, payloadJson) {
   }
   fillCategorySelect('log-category');
   fillCategorySelect('schedule-category');
-  fillCategorySelect('focus-category');
   syncPickerToCompound('log', state.preferredCompound);
   syncPickerToCompound('schedule', state.preferredCompound);
   syncPickerInputs('log');
   syncPickerInputs('schedule');
-  syncPickerInputs('focus');
   fillCompoundSelect('log-compound', 'log');
   fillCompoundSelect('schedule-compound', 'schedule');
-  fillFocusCompoundSelect();
   setDefaultDateTimeInputs();
   renderRecentCompounds();
   renderDiagnostics();
@@ -2903,7 +2936,6 @@ function renderDashboardHTML(appName, payloadJson) {
 
   function compoundHasVisibleSignal(compound) {
     if (!compound) return false;
-    if (Array.isArray(compound.markers) && compound.markers.length > 0) return true;
     return Array.isArray(compound.points) && compound.points.some(function(point) {
       return Number(point[1] || 0) > 0.000001;
     });
@@ -2913,12 +2945,20 @@ function renderDashboardHTML(appName, payloadJson) {
     const source = getSeries();
     return source.compounds
       .filter(function(compound) {
-        if (state.focusCompound && compound.name !== state.focusCompound) return false;
         return compoundHasVisibleSignal(compound);
       })
       .sort(function(a, b) {
         return String(a.display_name || a.name).localeCompare(String(b.display_name || b.name));
       });
+  }
+
+  function currentActiveStatusCompoundNames() {
+    const source = getSeries();
+    return source.compounds
+      .filter(function(compound) {
+        return compoundHasVisibleSignal(compound);
+      })
+      .map(function(compound) { return compound.name; });
   }
 
   function normalizeEnabledCompounds() {
@@ -2964,10 +3004,7 @@ function renderDashboardHTML(appName, payloadJson) {
     }
 
     if (!status) return;
-    const focusMeta = state.focusCompound
-      ? (payload.compounds.find(function(item) { return item.name === state.focusCompound; }) || {}).display_name || state.focusCompound
-      : 'All compounds';
-    status.textContent = 'Focus: ' + focusMeta;
+    status.textContent = 'Showing active substances in the current window';
   }
 
   function renderDiagnostics() {
@@ -3216,7 +3253,7 @@ function renderDashboardHTML(appName, payloadJson) {
     }
     empty.style.display = 'none';
 
-    const visibleNames = currentGraphVisibleCompounds().map(function(compound) { return compound.name; });
+    const visibleNames = currentActiveStatusCompoundNames();
     const visibleRows = filteredRows().filter(function(row) {
       return visibleNames.includes(row.name);
     });
@@ -3246,7 +3283,6 @@ function renderDashboardHTML(appName, payloadJson) {
         + '<div class="card-details">'
         + '<div class="small">Route: ' + route + ' • Category: ' + category + '</div>'
         + '<div class="small">Confidence: ' + qualityLabel + '</div>'
-        + '<div class="card-actions"><button class="pill" type="button" data-focus-compound="' + escapeHtmlText(r.name) + '">Focus chart</button></div>'
         + '</div>'
         + '</div>';
     }).join('');
@@ -3259,27 +3295,6 @@ function renderDashboardHTML(appName, payloadJson) {
       });
     });
 
-    root.querySelectorAll('button[data-focus-compound]').forEach(function(button) {
-      button.addEventListener('click', function(event) {
-        event.stopPropagation();
-        setFocusCompound(button.getAttribute('data-focus-compound') || '');
-      });
-    });
-  }
-
-  function setFocusCompound(name) {
-    const normalized = String(name || '').trim();
-    state.focusCompound = normalized && state.focusCompound !== normalized ? normalized : null;
-    if (state.focusCompound && !state.enabled.includes(state.focusCompound)) {
-      state.enabled.push(state.focusCompound);
-    }
-    if (state.focusCompound) syncPickerToCompound('focus', state.focusCompound);
-    syncPickerInputs('focus');
-    fillFocusCompoundSelect();
-    normalizeEnabledCompounds();
-    saveUiPrefs();
-    draw(false);
-    showToast(state.focusCompound ? 'Focused chart on selected compound.' : 'Cleared chart focus.');
   }
 
   function relativeFromNow(value) {
@@ -3414,8 +3429,6 @@ function renderDashboardHTML(appName, payloadJson) {
 
     syncPickerInputs('log');
     syncPickerInputs('schedule');
-    syncPickerInputs('focus');
-    fillFocusCompoundSelect();
     normalizeEnabledCompounds();
 
     renderOverview();
@@ -3441,17 +3454,12 @@ function renderDashboardHTML(appName, payloadJson) {
       return compound.name === preferredCompound;
     }) ? preferredCompound : null;
 
-    const focusCompound = typeof parsed.focusCompound === 'string' ? parsed.focusCompound : null;
-    state.focusCompound = focusCompound && payload.compounds.some(function(compound) {
-      return compound.name === focusCompound;
-    }) ? focusCompound : null;
   }
 
   function saveUiPrefs() {
     try {
       localStorage.setItem(UI_PREFS_KEY, JSON.stringify({
-        preferredCompound: state.preferredCompound,
-        focusCompound: state.focusCompound
+        preferredCompound: state.preferredCompound
       }));
     } catch (error) {
       // Ignore storage errors; dashboard still works with in-memory state.
@@ -3467,7 +3475,7 @@ function renderDashboardHTML(appName, payloadJson) {
     state.editInjectionId = injectionId ? String(injectionId) : null;
     const submit = document.getElementById('log-submit');
     const cancel = document.getElementById('log-cancel-edit');
-    if (submit) submit.textContent = state.editInjectionId ? 'Save Changes' : 'Save Injection';
+    if (submit) submit.textContent = state.editInjectionId ? 'Save Changes' : 'Save Entry';
     if (cancel) cancel.style.display = state.editInjectionId ? 'inline-block' : 'none';
   }
 
@@ -3532,7 +3540,7 @@ function renderDashboardHTML(appName, payloadJson) {
     state.preferredCompound = entry.compound || state.preferredCompound;
     setLogEditState(id);
     setActivePanel('log', true);
-    setFormStatus('log-status', 'Editing past injection. Save Changes to update it.');
+    setFormStatus('log-status', 'Editing past log entry. Save Changes to update it.');
   }
 
   function buildRunUrl(params) {
@@ -3608,8 +3616,8 @@ function renderDashboardHTML(appName, payloadJson) {
       time: at.toISOString(),
       notes: notes
     });
-    queueToast(editingId ? 'Injection updated.' : 'Injection saved.');
-    setFormStatus('log-status', editingId ? 'Opening MedCut to update injection...' : 'Opening MedCut to save injection...');
+    queueToast(editingId ? 'Log entry updated.' : 'Log entry saved.');
+    setFormStatus('log-status', editingId ? 'Opening MedCut to update log entry...' : 'Opening MedCut to save log entry...');
     window.location.href = url;
   }
 
@@ -3695,8 +3703,7 @@ function renderDashboardHTML(appName, payloadJson) {
       const safeName = escapeHtmlText(c.name);
       const color = safeColor(c.color);
       const displayName = escapeHtmlText(c.display_name);
-      const focused = state.focusCompound === c.name ? ' active' : '';
-      return '<label class="' + focused.trim() + '"><input type="checkbox" ' + checked + ' data-compound="' + safeName + '">'
+      return '<label><input type="checkbox" ' + checked + ' data-compound="' + safeName + '">'
         + '<span class="dot" style="background:' + color + '"></span>'
         + displayName + '</label>';
     }).join('');
@@ -3809,7 +3816,6 @@ function renderDashboardHTML(appName, payloadJson) {
 
     const enabled = source.compounds
       .filter(c => state.enabled.includes(c.name))
-      .filter(c => !state.focusCompound || c.name === state.focusCompound)
       .map(c => ({
         ...c,
         points: c.points.map(p => [new Date(p[0]).getTime(), p[1]])
@@ -3839,7 +3845,6 @@ function renderDashboardHTML(appName, payloadJson) {
     }
 
     const hasDoseSignal = enabled.some(s => {
-      if (Array.isArray(s.markers) && s.markers.length > 0) return true;
       return s.points.some(p => Number(p[1] || 0) > 0.000001);
     });
 
@@ -3871,19 +3876,9 @@ function renderDashboardHTML(appName, payloadJson) {
       ctx.fillText(val, 10, y + 7);
     }
 
-    const xNow = padding.left + ((now - minT) / (maxT - minT)) * plotW;
-    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-    ctx.setLineDash([8, 8]);
-    ctx.beginPath();
-    ctx.moveTo(xNow, padding.top);
-    ctx.lineTo(xNow, padding.top + plotH);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
     ctx.fillStyle = '#9fb1cc';
     ctx.font = '12px -apple-system';
     ctx.fillText(state.mode === 'concentration' ? 'mg/L' : 'mg', 10, 24);
-    ctx.fillText('Now', xNow + 8, padding.top + 20);
 
     for (let i = 0; i <= 4; i++) {
       const x = padding.left + (plotW * i / 4);
@@ -3892,22 +3887,6 @@ function renderDashboardHTML(appName, payloadJson) {
       ctx.fillStyle = '#9fb1cc';
       ctx.font = '11px -apple-system';
       ctx.fillText(label, x - 30, H - 10);
-    }
-
-    if (state.showMarkers) {
-      for (const s of enabled) {
-        for (const marker of s.markers) {
-          const mt = new Date(marker[0]).getTime();
-          if (mt < minT || mt > maxT) continue;
-          const x = padding.left + ((mt - minT) / (maxT - minT)) * plotW;
-          ctx.strokeStyle = s.color + '40';
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(x, padding.top);
-          ctx.lineTo(x, padding.top + plotH);
-          ctx.stroke();
-        }
-      }
     }
 
     function movingAverage(points, windowSize) {

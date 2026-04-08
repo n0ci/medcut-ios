@@ -422,7 +422,43 @@ async function ensureDataFiles() {
         injections: [],
         protocols: [],
         categories: [],
-        __files: {}
+        __files: {},
+        __diagnostics: {
+          skipped_injections: 0,
+          skipped_protocols: 0,
+          recovered_injections: 0,
+          recovered_protocols: 0
+        }
+      }
+
+      function resolveHistoryCompoundId(rawValue, categoryHint) {
+        const raw = String(rawValue || "").trim()
+        if (!raw) return null
+
+        const hintedCategory = normalizeCategoryName(categoryHint || "")
+
+        if (merged.compounds[raw]) {
+          return { id: raw, recovered: true }
+        }
+
+        if (hintedCategory && raw.indexOf("::") === -1) {
+          const hintedId = makeCompoundId(hintedCategory, raw)
+          if (merged.compounds[hintedId]) {
+            return { id: hintedId, recovered: false }
+          }
+        }
+
+        const withHint = normalizeCompoundKey(merged, raw, hintedCategory)
+        if (withHint) {
+          return { id: withHint, recovered: true }
+        }
+
+        const fallback = normalizeCompoundKey(merged, raw, "")
+        if (fallback) {
+          return { id: fallback, recovered: true }
+        }
+
+        return null
       }
 
       for (const fileName of allFiles) {
@@ -460,26 +496,38 @@ async function ensureDataFiles() {
         }
 
         for (const injection of historyData.injections) {
-          const compoundId = makeCompoundId(category, injection.compound)
-          if (!merged.compounds[compoundId]) continue
+          const resolved = resolveHistoryCompoundId(injection.compound, category)
+          if (!resolved) {
+            merged.__diagnostics.skipped_injections += 1
+            continue
+          }
+          if (resolved.recovered) merged.__diagnostics.recovered_injections += 1
+
+          const resolvedCompound = merged.compounds[resolved.id]
           merged.injections.push({
             id: injection.id,
-            compound: compoundId,
+            compound: resolved.id,
             dose_mg: injection.dose_mg,
             time: injection.time,
             source: injection.source,
             notes: injection.notes || "",
-            category: category,
-            source_file: fileName
+            category: resolvedCompound ? resolvedCompound.category : category,
+            source_file: resolvedCompound ? resolvedCompound.source_file : fileName
           })
         }
 
         for (const protocol of historyData.protocols) {
-          const compoundId = makeCompoundId(category, protocol.compound)
-          if (!merged.compounds[compoundId]) continue
+          const resolved = resolveHistoryCompoundId(protocol.compound, category)
+          if (!resolved) {
+            merged.__diagnostics.skipped_protocols += 1
+            continue
+          }
+          if (resolved.recovered) merged.__diagnostics.recovered_protocols += 1
+
+          const resolvedCompound = merged.compounds[resolved.id]
           merged.protocols.push({
             id: protocol.id,
-            compound: compoundId,
+            compound: resolved.id,
             start: protocol.start,
             dose_mg: protocol.dose_mg,
             every_days: protocol.every_days,
@@ -487,8 +535,8 @@ async function ensureDataFiles() {
             until: protocol.until,
             enabled: protocol.enabled,
             notes: protocol.notes || "",
-            category: category,
-            source_file: fileName
+            category: resolvedCompound ? resolvedCompound.category : category,
+            source_file: resolvedCompound ? resolvedCompound.source_file : fileName
           })
         }
       }
@@ -520,22 +568,57 @@ async function ensureDataFiles() {
       const needle = String(value).trim().toLowerCase()
       const wantedCategory = normalizeCategoryName(category || "")
 
-      const names = compoundNames(data)
+      const names = compoundNames(data).slice().sort()
+
+      function categoryOf(name) {
+        const compound = data.compounds[name]
+        return normalizeCategoryName(compound && compound.category ? compound.category : "")
+      }
+
+      function matchesCategory(name) {
+        if (!wantedCategory) return true
+        return categoryOf(name) === wantedCategory
+      }
+
       for (const name of names) {
+        if (!matchesCategory(name)) continue
+        if (name.toLowerCase() === needle) return name
+      }
+
+      const categoryBaseInput = /^([a-z0-9_-]+)\/([a-z0-9_-]+)$/i.exec(needle)
+      if (categoryBaseInput) {
+        const candidate = makeCompoundId(normalizeCategoryName(categoryBaseInput[1]) || DEFAULT_CATEGORY, normalizeCategoryName(categoryBaseInput[2]) || "")
+        if (data.compounds[candidate]) return candidate
+      }
+
+      const baseMatches = []
+      for (const name of names) {
+        if (!matchesCategory(name)) continue
+        const split = splitCompoundId(name)
+        if (split && split.base_key.toLowerCase() === needle) {
+          baseMatches.push(name)
+        }
+      }
+      if (baseMatches.length) {
+        const preferred = baseMatches.find(function(name) { return categoryOf(name) === DEFAULT_CATEGORY })
+        return preferred || baseMatches[0]
+      }
+
+      const displayMatches = []
+      for (const name of names) {
+        if (!matchesCategory(name)) continue
         const compound = data.compounds[name]
         if (!compound) continue
-        if (wantedCategory && normalizeCategoryName(compound.category) !== wantedCategory) continue
-
-        if (name.toLowerCase() === needle) return name
-
-        const split = splitCompoundId(name)
-        if (split && split.base_key.toLowerCase() === needle) return name
-
         const display = (compound.display_name || "").toLowerCase()
-        if (display === needle) return name
-
-        if (split && `${split.category}/${split.base_key}`.toLowerCase() === needle) return name
+        if (display === needle) {
+          displayMatches.push(name)
+        }
       }
+      if (displayMatches.length) {
+        const preferred = displayMatches.find(function(name) { return categoryOf(name) === DEFAULT_CATEGORY })
+        return preferred || displayMatches[0]
+      }
+
       return null
     }
 
@@ -1005,7 +1088,13 @@ function renderDashboardHTML(appName, payloadJson) {
     display: grid;
     grid-template-columns: repeat(2,minmax(0,1fr));
     gap: 10px;
-    margin: 14px 0 18px;
+    margin: 10px 0 14px;
+  }
+  .section-title {
+    margin: 14px 0 6px;
+    font-size: 13px;
+    color: #c8d6f1;
+    letter-spacing: 0.2px;
   }
   .card {
     background: var(--panel);
@@ -1115,15 +1204,38 @@ function renderDashboardHTML(appName, payloadJson) {
     background: var(--panel);
     border: 1px solid var(--panel-border);
     border-radius: 14px;
-    padding: 10px;
+    overflow: hidden;
   }
-  .entry-card h3 {
-    margin: 0 0 8px;
-    font-size: 14px;
+  .entry-card summary {
+    cursor: pointer;
+    padding: 10px 12px;
+    font-size: 13px;
+    color: #d9e7ff;
+    user-select: none;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.03);
+    list-style: none;
+  }
+  .entry-card summary::-webkit-details-marker {
+    display: none;
+  }
+  .entry-card summary::before {
+    content: '▶';
+    margin-right: 8px;
+    font-size: 10px;
+    color: #9fb1cc;
+  }
+  .entry-card[open] summary::before {
+    content: '▼';
+  }
+  .entry-card[open] summary {
+    background: rgba(255,255,255,0.08);
+    border-bottom: 1px solid rgba(255,255,255,0.12);
   }
   .entry-card form {
     display: grid;
     gap: 8px;
+    padding: 10px;
   }
   .entry-row {
     display: grid;
@@ -1153,6 +1265,10 @@ function renderDashboardHTML(appName, payloadJson) {
   .entry-status {
     color: #f6dfa8;
     font-size: 11px;
+    padding: 0 10px 10px;
+  }
+  .entry-card .entry-note {
+    padding: 0 10px 10px;
   }
   .history-panel {
     margin-top: 12px;
@@ -1180,8 +1296,18 @@ function renderDashboardHTML(appName, payloadJson) {
   .history-list {
     display: grid;
     gap: 8px;
-    max-height: 280px;
+    max-height: 340px;
     overflow: auto;
+  }
+  .history-meta {
+    margin-bottom: 8px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .history-more {
+    margin-top: 8px;
+    display: flex;
+    justify-content: center;
   }
   .history-item {
     border: 1px solid rgba(255,255,255,0.1);
@@ -1257,7 +1383,7 @@ function renderDashboardHTML(appName, payloadJson) {
   }
   canvas {
     width: 100%;
-    height: 320px;
+    height: auto;
     display: block;
   }
   .legend {
@@ -1293,11 +1419,14 @@ function renderDashboardHTML(appName, payloadJson) {
   <h1>${escapeHtml(appName)}</h1>
   <div class="muted">Schema v<span id="schema"></span> • history from logged injections • forecast from enabled schedule entries.</div>
   <div id="empty" class="empty" style="display:none">No logs yet. Use the Log Injection shortcut to create your first entry.</div>
-  <div class="cards" id="cards"></div>
 
-  <div class="quick-actions">
-    <button class="pill" type="button" onclick="focusEntry('log')">Log Injection</button>
-    <button class="pill" type="button" onclick="focusEntry('schedule')">Add Schedule</button>
+  <div class="section-title">Trend Graph</div>
+
+  <div class="chart-wrap">
+    <canvas id="chart"></canvas>
+    <div id="plot-warning" class="plot-warning" style="display:none"></div>
+    <div id="chart-tip" class="chart-tip" style="display:none"></div>
+    <div class="legend" id="legend"></div>
   </div>
 
   <div class="toolbar">
@@ -1332,9 +1461,36 @@ function renderDashboardHTML(appName, payloadJson) {
     </div>
   </details>
 
+  <div class="section-title">Current Concentrations</div>
+  <div class="cards" id="cards"></div>
+
+  <div class="section-title">Past Injections</div>
+  <section class="history-panel">
+    <div class="history-head">
+      <h2>Past Injections</h2>
+      <div class="history-ranges">
+        <button class="pill" id="history-7" type="button" onclick="setHistoryRange(7)">7d</button>
+        <button class="pill" id="history-30" type="button" onclick="setHistoryRange(30)">30d</button>
+        <button class="pill" id="history-90" type="button" onclick="setHistoryRange(90)">90d</button>
+        <button class="pill" id="history-all" type="button" onclick="setHistoryRange(0)">All</button>
+      </div>
+    </div>
+    <div id="history-meta" class="history-meta"></div>
+    <div id="history-list" class="history-list"></div>
+    <div class="history-more">
+      <button id="history-more" class="pill" type="button" onclick="loadMoreHistory()" style="display:none">Load more</button>
+    </div>
+  </section>
+
+  <div class="section-title">Entry Forms</div>
+  <div class="quick-actions">
+    <button class="pill" type="button" onclick="focusEntry('log')">Expand Log Injection</button>
+    <button class="pill" type="button" onclick="focusEntry('schedule')">Expand Add Schedule</button>
+  </div>
+
   <div class="entry-panels">
-    <div id="entry-log" class="entry-card">
-      <h3>Log Injection</h3>
+    <details id="entry-log" class="entry-card">
+      <summary>Log Injection</summary>
       <form onsubmit="submitLog(event)">
         <select id="log-compound" required></select>
         <div class="entry-row">
@@ -1346,10 +1502,10 @@ function renderDashboardHTML(appName, payloadJson) {
         <button class="pill" type="submit">Save Injection</button>
       </form>
       <div id="log-status" class="entry-status"></div>
-    </div>
+    </details>
 
-    <div id="entry-schedule" class="entry-card">
-      <h3>Add Schedule</h3>
+    <details id="entry-schedule" class="entry-card">
+      <summary>Add Schedule</summary>
       <form onsubmit="submitSchedule(event)">
         <select id="schedule-compound" required></select>
         <div class="entry-row">
@@ -1366,28 +1522,8 @@ function renderDashboardHTML(appName, payloadJson) {
       </form>
       <div id="schedule-status" class="entry-status"></div>
       <div class="entry-note">Saving writes to history and reopens the updated dashboard automatically.</div>
-    </div>
+    </details>
   </div>
-
-  <div class="chart-wrap">
-    <canvas id="chart"></canvas>
-    <div id="plot-warning" class="plot-warning" style="display:none"></div>
-    <div id="chart-tip" class="chart-tip" style="display:none"></div>
-    <div class="legend" id="legend"></div>
-  </div>
-
-  <section class="history-panel">
-    <div class="history-head">
-      <h2>Past Injections</h2>
-      <div class="history-ranges">
-        <button class="pill" id="history-7" type="button" onclick="setHistoryRange(7)">7d</button>
-        <button class="pill" id="history-30" type="button" onclick="setHistoryRange(30)">30d</button>
-        <button class="pill" id="history-90" type="button" onclick="setHistoryRange(90)">90d</button>
-        <button class="pill" id="history-all" type="button" onclick="setHistoryRange(0)">All</button>
-      </div>
-    </div>
-    <div id="history-list" class="history-list"></div>
-  </section>
 
   <div class="footer">Convenience visualization only. Values are model estimates and can be low-confidence for some compounds.</div>
 
@@ -1406,6 +1542,7 @@ function renderDashboardHTML(appName, payloadJson) {
     qualityFilter: 'all',
     categoryFilter: 'all',
     historyDays: 30,
+    historyPage: 0,
     chartDetail: 'markers',
     showMarkers: true,
     showTotal: false,
@@ -1413,6 +1550,7 @@ function renderDashboardHTML(appName, payloadJson) {
     enabled: payload.datasets.amount_30.compounds.map(c => c.name),
     hoverX: null
   };
+  const HISTORY_PAGE_SIZE = 15;
 
   const routeSet = new Set(payload.compounds.map(c => c.route || 'unknown'));
   const routeSelect = document.getElementById('routeFilter');
@@ -1541,9 +1679,9 @@ function renderDashboardHTML(appName, payloadJson) {
 
   function setWindow(days) { state.days = days; draw(false); }
   function setMode(mode) { state.mode = mode; draw(false); }
-  function setRouteFilter(route) { state.routeFilter = route; draw(false); }
-  function setQualityFilter(quality) { state.qualityFilter = quality; draw(false); }
-  function setCategoryFilter(category) { state.categoryFilter = category; draw(false); }
+  function setRouteFilter(route) { state.routeFilter = route; resetHistoryPagination(); draw(false); }
+  function setQualityFilter(quality) { state.qualityFilter = quality; resetHistoryPagination(); draw(false); }
+  function setCategoryFilter(category) { state.categoryFilter = category; resetHistoryPagination(); draw(false); }
 
   function setChartDetail(detail) {
     state.chartDetail = detail;
@@ -1569,7 +1707,18 @@ function renderDashboardHTML(appName, payloadJson) {
 
   function setHistoryRange(days) {
     state.historyDays = days;
+    resetHistoryPagination();
     draw(false);
+  }
+
+  function resetHistoryPagination() {
+    state.historyPage = 0;
+  }
+
+  function loadMoreHistory() {
+    state.historyPage += 1;
+    renderHistory();
+    updateActiveControls();
   }
 
   function updateActiveControls() {
@@ -1598,7 +1747,10 @@ function renderDashboardHTML(appName, payloadJson) {
   function focusEntry(kind) {
     const target = kind === 'schedule' ? document.getElementById('entry-schedule') : document.getElementById('entry-log');
     if (!target) return;
-    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    target.open = true;
+    const firstField = target.querySelector('input, select, textarea');
+    if (firstField) firstField.focus();
+    target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   function setFormStatus(id, message) {
@@ -1737,6 +1889,8 @@ function renderDashboardHTML(appName, payloadJson) {
 
   function renderHistory() {
     const list = document.getElementById('history-list');
+    const meta = document.getElementById('history-meta');
+    const more = document.getElementById('history-more');
     const now = Date.now();
     const cutoff = state.historyDays > 0 ? (now - state.historyDays * 86400000) : null;
 
@@ -1750,12 +1904,20 @@ function renderDashboardHTML(appName, payloadJson) {
       return routeOk && qualityOk && categoryOk;
     });
 
-    if (!filtered.length) {
+    const visibleCount = Math.min(filtered.length, (state.historyPage + 1) * HISTORY_PAGE_SIZE);
+    const pageItems = filtered.slice(0, visibleCount);
+
+    if (!pageItems.length) {
+      meta.textContent = 'Showing 0 of 0 injections';
+      more.style.display = 'none';
       list.innerHTML = '<div class="entry-note">No past injections for current filters and range.</div>';
       return;
     }
 
-    list.innerHTML = filtered.map(function(item) {
+    meta.textContent = 'Showing ' + pageItems.length + ' of ' + filtered.length + ' injections';
+    more.style.display = filtered.length > pageItems.length ? 'inline-block' : 'none';
+
+    list.innerHTML = pageItems.map(function(item) {
       const dose = Number(item.dose_mg || 0).toFixed(2);
       const whenAbs = new Date(item.time).toLocaleString();
       const whenRel = relativeFromNow(item.time);
@@ -1784,12 +1946,17 @@ function renderDashboardHTML(appName, payloadJson) {
     const warning = document.getElementById('plot-warning');
     const tip = document.getElementById('chart-tip');
     const ctx = canvas.getContext('2d');
+    const dpr = Math.max(1, Math.min(3, Number(window.devicePixelRatio || 1)));
     const W = Math.max(320, Math.floor(canvas.clientWidth || 320));
-    const H = Math.max(240, Math.floor(W * 0.54));
-    if (canvas.width !== W || canvas.height !== H) {
-      canvas.width = W;
-      canvas.height = H;
+    const H = Math.max(220, Math.min(420, Math.floor(W * 0.56)));
+    const scaledW = Math.floor(W * dpr);
+    const scaledH = Math.floor(H * dpr);
+    if (canvas.width !== scaledW || canvas.height !== scaledH) {
+      canvas.width = scaledW;
+      canvas.height = scaledH;
+      canvas.style.height = H + 'px';
     }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, W, H);
 
     const bg = ctx.createLinearGradient(0, 0, 0, H);

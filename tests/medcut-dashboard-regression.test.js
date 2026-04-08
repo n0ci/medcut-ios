@@ -159,3 +159,53 @@ test('dashboard includes past injections history panel', () => {
     'Expected renderHistory function for view-only injection history.'
   );
 });
+
+test('dashboard section order is graph first then concentrations then history then forms', () => {
+  const graphIdx = source.indexOf('<div class="section-title">Trend Graph</div>');
+  const cardsIdx = source.indexOf('<div class="section-title">Current Concentrations</div>');
+  const historyIdx = source.indexOf('<div class="section-title">Past Injections</div>');
+  const formsIdx = source.indexOf('<div class="section-title">Entry Forms</div>');
+
+  assert.ok(graphIdx !== -1 && cardsIdx !== -1 && historyIdx !== -1 && formsIdx !== -1, 'Expected all main section titles to exist.');
+  assert.ok(graphIdx < cardsIdx, 'Graph section should appear before concentrations section.');
+  assert.ok(cardsIdx < historyIdx, 'Concentrations section should appear before past injections section.');
+  assert.ok(historyIdx < formsIdx, 'Past injections section should appear before entry forms section.');
+});
+
+test('graph controls are below chart and forms are collapsed by default', () => {
+  const chartIdx = source.indexOf('<div class="chart-wrap">');
+  const toolbarIdx = source.indexOf('<div class="toolbar">');
+  assert.ok(chartIdx !== -1 && toolbarIdx !== -1 && chartIdx < toolbarIdx, 'Expected graph controls below chart container.');
+
+  assert.match(
+    source,
+    /<details id="entry-log" class="entry-card">/,
+    'Expected log form to be collapsed details panel by default.'
+  );
+
+  assert.match(
+    source,
+    /<details id="entry-schedule" class="entry-card">/,
+    'Expected schedule form to be collapsed details panel by default.'
+  );
+});
+
+test('history pagination load-more wiring exists', () => {
+  assert.match(
+    source,
+    /id="history-more" class="pill" type="button" onclick="loadMoreHistory\(\)"/,
+    'Expected load more button for paginated history.'
+  );
+
+  assert.match(
+    source,
+    /const HISTORY_PAGE_SIZE = 15;/,
+    'Expected finite page size constant for history pagination.'
+  );
+
+  assert.match(
+    source,
+    /function loadMoreHistory\(\)/,
+    'Expected pagination handler function for history view.'
+  );
+});

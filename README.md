@@ -45,7 +45,14 @@ Shortcuts are optional and only for convenience/automation after install:
 - Quick open dashboard
 - Siri / automation triggers
 
-The dashboard now includes built-in quick actions (Log Injection, Add Schedule, Summary Output), so most users can stay inside one UI.
+The dashboard now opens with:
+- Graph first
+- Graph controls directly below
+- Current concentrations
+- Past injections with pagination
+- Collapsed entry forms (expand only when needed)
+
+This keeps the daily workflow inside one UI while reducing clutter.
 
 ### 5. Optional widget
 Add a Scriptable widget and select MedCut.
@@ -159,7 +166,6 @@ The script auto-discovers all `<category>.json` files across both folders and me
 - `history/small_molecules.json`: starter history template (small molecules)
 - `history/antidepressants.json`: starter history template (antidepressants)
 - `Shortcut_Setup.md`: manual shortcut builder instructions
-- `docs/RELEASE_CHECKLIST.md`: release workflow
 
 ## Contributor notes
 

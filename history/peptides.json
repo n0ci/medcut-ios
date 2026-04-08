@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "category": "peptides",
+  "injections": [],
+  "protocols": [
+    {
+      "compound": "tirzepatide",
+      "start": "2026-02-01T10:00:00.000Z",
+      "dose_mg": 2.5,
+      "every_days": 7,
+      "occurrences": 6,
+      "enabled": false,
+      "notes": "Example starter phase"
+    },
+    {
+      "compound": "tirzepatide",
+      "start": "2026-03-15T10:00:00.000Z",
+      "dose_mg": 3.75,
+      "every_days": 7,
+      "enabled": false,
+      "notes": "Example escalation phase"
+    }
+  ]
+}

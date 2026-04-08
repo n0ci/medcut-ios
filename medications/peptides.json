@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "category": "peptides",
+  "compounds": {
+    "tirzepatide": {
+      "display_name": "Tirzepatide",
+      "half_life_days": 5.0,
+      "bioavailability": 0.8,
+      "vd_l": 9.7,
+      "route": "subcutaneous",
+      "model_quality": "good",
+      "color": "#56CCF2"
+    },
+    "retatrutide": {
+      "display_name": "Retatrutide",
+      "half_life_days": 6.0,
+      "bioavailability": 1.0,
+      "vd_l": 10.0,
+      "route": "subcutaneous",
+      "model_quality": "rough",
+      "color": "#BB6BD9",
+      "notes": "Half-life is reported publicly; bioavailability and Vd here are placeholders for tracking/forecasting."
+    },
+    "semaglutide": {
+      "display_name": "Semaglutide",
+      "half_life_days": 7.0,
+      "bioavailability": 0.89,
+      "vd_l": 12.5,
+      "route": "subcutaneous",
+      "model_quality": "good",
+      "color": "#6FCF97"
+    },
+    "cagrilintide": {
+      "display_name": "Cagrilintide",
+      "half_life_days": 7.0,
+      "bioavailability": 1.0,
+      "vd_l": 10.0,
+      "route": "subcutaneous",
+      "model_quality": "rough",
+      "color": "#F2C94C",
+      "notes": "Placeholder bioavailability/Vd."
+    },
+    "tesamorelin": {
+      "display_name": "Tesamorelin",
+      "half_life_days": 0.0076,
+      "bioavailability": 0.04,
+      "vd_l": 336.0,
+      "route": "subcutaneous",
+      "model_quality": "rough",
+      "color": "#F2994A"
+    },
+    "cjc1295_dac": {
+      "display_name": "CJC-1295 (DAC)",
+      "half_life_days": 7.0,
+      "bioavailability": 1.0,
+      "vd_l": 10.0,
+      "route": "subcutaneous",
+      "model_quality": "rough",
+      "color": "#2D9CDB",
+      "notes": "Bioavailability/Vd are placeholders."
+    },
+    "ipamorelin": {
+      "display_name": "Ipamorelin",
+      "half_life_days": 0.083,
+      "bioavailability": 1.0,
+      "vd_l": 10.0,
+      "route": "subcutaneous",
+      "model_quality": "rough",
+      "color": "#27AE60",
+      "notes": "Bioavailability/Vd are placeholders."
+    },
+    "ghk_cu": {
+      "display_name": "GHK-Cu",
+      "half_life_days": 0.031,
+      "bioavailability": 1.0,
+      "vd_l": 10.0,
+      "route": "topical_or_subcutaneous",
+      "model_quality": "low",
+      "color": "#E91E63",
+      "notes": "Short plasma half-life; systemic concentration modeling is low-confidence, especially for topical use."
+    },
+    "bpc157": {
+      "display_name": "BPC-157",
+      "half_life_days": 0.2,
+      "bioavailability": 1.0,
+      "vd_l": 10.0,
+      "route": "subcutaneous_or_local",
+      "model_quality": "low",
+      "color": "#EB5757",
+      "notes": "Heuristic placeholders; use mainly for logging and relative decay."
+    },
+    "tb500": {
+      "display_name": "TB-500",
+      "half_life_days": 2.0,
+      "bioavailability": 1.0,
+      "vd_l": 10.0,
+      "route": "subcutaneous_or_intramuscular",
+      "model_quality": "low",
+      "color": "#9B51E0",
+      "notes": "Heuristic placeholders; use mainly for logging and relative decay."
+    }
+  }
+}

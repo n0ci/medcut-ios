@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "category": "painkillers",
+  "compounds": {
+    "ibuprofen": {
+      "display_name": "Ibuprofen",
+      "half_life_days": 0.083,
+      "bioavailability": 0.9,
+      "vd_l": 12.0,
+      "route": "oral",
+      "model_quality": "rough",
+      "color": "#F2994A",
+      "notes": "Simple elimination estimate for convenience tracking."
+    },
+    "acetaminophen": {
+      "display_name": "Acetaminophen",
+      "half_life_days": 0.104,
+      "bioavailability": 0.85,
+      "vd_l": 67.0,
+      "route": "oral",
+      "model_quality": "rough",
+      "color": "#56CCF2",
+      "notes": "Convenience estimate only."
+    }
+  }
+}

@@ -98,6 +98,56 @@
       "model_quality": "low",
       "color": "#9B51E0",
       "notes": "Heuristic placeholders; use mainly for logging and relative decay."
+    },
+    "aod9604": {
+      "display_name": "AOD-9604",
+      "half_life_days": 0.06,
+      "bioavailability": 1.0,
+      "vd_l": 10.0,
+      "route": "subcutaneous",
+      "model_quality": "low",
+      "color": "#7ED321",
+      "notes": "Short-lived peptide estimate; parameters are placeholders for convenience tracking."
+    },
+    "epitalon": {
+      "display_name": "Epitalon",
+      "half_life_days": 0.12,
+      "bioavailability": 1.0,
+      "vd_l": 10.0,
+      "route": "subcutaneous_or_intranasal",
+      "model_quality": "low",
+      "color": "#50E3C2",
+      "notes": "Limited human PK references; modeled as low-confidence tracking estimate."
+    },
+    "selank": {
+      "display_name": "Selank",
+      "half_life_days": 0.05,
+      "bioavailability": 1.0,
+      "vd_l": 10.0,
+      "route": "intranasal_or_subcutaneous",
+      "model_quality": "low",
+      "color": "#4A90E2",
+      "notes": "Approximate elimination only; useful mostly for dose/event logging."
+    },
+    "ll37": {
+      "display_name": "LL-37",
+      "half_life_days": 0.08,
+      "bioavailability": 1.0,
+      "vd_l": 12.0,
+      "route": "subcutaneous_or_local",
+      "model_quality": "low",
+      "color": "#D0021B",
+      "notes": "PK behavior varies by use-case; represented as low-confidence placeholder values."
+    },
+    "oxytocin": {
+      "display_name": "Oxytocin",
+      "half_life_days": 0.003,
+      "bioavailability": 0.2,
+      "vd_l": 18.0,
+      "route": "intranasal_or_subcutaneous",
+      "model_quality": "rough",
+      "color": "#9013FE",
+      "notes": "Very short systemic half-life; route-dependent effects can differ from plasma estimates."
     }
   }
 }

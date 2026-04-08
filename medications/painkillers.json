@@ -21,6 +21,56 @@
       "model_quality": "rough",
       "color": "#56CCF2",
       "notes": "Convenience estimate only."
+    },
+    "naproxen": {
+      "display_name": "Naproxen",
+      "half_life_days": 0.58,
+      "bioavailability": 0.95,
+      "vd_l": 11.0,
+      "route": "oral",
+      "model_quality": "rough",
+      "color": "#6FCF97",
+      "notes": "Longer half-life NSAID represented with simplified one-compartment assumptions."
+    },
+    "diclofenac": {
+      "display_name": "Diclofenac",
+      "half_life_days": 0.08,
+      "bioavailability": 0.6,
+      "vd_l": 14.0,
+      "route": "oral_or_topical",
+      "model_quality": "rough",
+      "color": "#F2C94C",
+      "notes": "Route-dependent exposure differs; useful mainly for relative tracking patterns."
+    },
+    "celecoxib": {
+      "display_name": "Celecoxib",
+      "half_life_days": 0.46,
+      "bioavailability": 0.4,
+      "vd_l": 400.0,
+      "route": "oral",
+      "model_quality": "rough",
+      "color": "#BB6BD9",
+      "notes": "Approximate values; high apparent distribution and PK variability across users."
+    },
+    "tramadol": {
+      "display_name": "Tramadol",
+      "half_life_days": 0.25,
+      "bioavailability": 0.75,
+      "vd_l": 190.0,
+      "route": "oral",
+      "model_quality": "rough",
+      "color": "#2D9CDB",
+      "notes": "Modeled as parent-compound only; active metabolite effects are not represented."
+    },
+    "ketorolac": {
+      "display_name": "Ketorolac",
+      "half_life_days": 0.23,
+      "bioavailability": 1.0,
+      "vd_l": 13.0,
+      "route": "oral_or_intramuscular",
+      "model_quality": "rough",
+      "color": "#27AE60",
+      "notes": "Short-term analgesic profile modeled with simplified elimination assumptions."
     }
   }
 }

@@ -140,7 +140,11 @@ The script auto-discovers all `<category>.json` files across both folders and me
 ## Which data file should I use?
 
 - MedCut creates starter files automatically on first launch.
-- If you want to edit presets later, use `medications/peptides.json` for peptide tracking and `medications/painkillers.json` for the example painkiller category.
+- If you want to edit presets later, start with these seeded categories:
+  - `medications/peptides.json`
+  - `medications/painkillers.json`
+  - `medications/small_molecules.json`
+  - `medications/antidepressants.json`
 
 ## Repo layout
 
@@ -148,8 +152,12 @@ The script auto-discovers all `<category>.json` files across both folders and me
 - `MedCut.js`: main Scriptable app
 - `medications/peptides.json`: category template (peptides)
 - `medications/painkillers.json`: category template (painkillers example)
+- `medications/small_molecules.json`: category template (small molecules)
+- `medications/antidepressants.json`: category template (antidepressants)
 - `history/peptides.json`: starter history template (peptides)
 - `history/painkillers.json`: starter history template (painkillers example)
+- `history/small_molecules.json`: starter history template (small molecules)
+- `history/antidepressants.json`: starter history template (antidepressants)
 - `Shortcut_Setup.md`: manual shortcut builder instructions
 - `docs/RELEASE_CHECKLIST.md`: release workflow
 

@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "category": "antidepressants",
+  "compounds": {
+    "sertraline": {
+      "display_name": "Sertraline",
+      "half_life_days": 1.1,
+      "bioavailability": 0.45,
+      "vd_l": 1400.0,
+      "route": "oral",
+      "model_quality": "rough",
+      "color": "#56CCF2",
+      "notes": "Approximate parent-compound profile for adherence-style trend tracking."
+    },
+    "escitalopram": {
+      "display_name": "Escitalopram",
+      "half_life_days": 1.25,
+      "bioavailability": 0.8,
+      "vd_l": 880.0,
+      "route": "oral",
+      "model_quality": "rough",
+      "color": "#6FCF97",
+      "notes": "One-compartment simplification; individual variability can be high."
+    },
+    "fluoxetine": {
+      "display_name": "Fluoxetine",
+      "half_life_days": 4.0,
+      "bioavailability": 0.72,
+      "vd_l": 1700.0,
+      "route": "oral",
+      "model_quality": "rough",
+      "color": "#F2C94C",
+      "notes": "Parent half-life used for convenience; long-lived metabolite is not separately modeled."
+    },
+    "venlafaxine": {
+      "display_name": "Venlafaxine",
+      "half_life_days": 0.21,
+      "bioavailability": 0.45,
+      "vd_l": 500.0,
+      "route": "oral",
+      "model_quality": "rough",
+      "color": "#EB5757",
+      "notes": "Estimated profile for relative timing only; metabolite exposure is not explicitly separated."
+    },
+    "bupropion": {
+      "display_name": "Bupropion",
+      "half_life_days": 0.88,
+      "bioavailability": 0.85,
+      "vd_l": 1250.0,
+      "route": "oral",
+      "model_quality": "rough",
+      "color": "#BB6BD9",
+      "notes": "Parent-focused estimate; active metabolite dynamics not explicitly modeled."
+    }
+  }
+}

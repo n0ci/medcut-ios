@@ -2147,6 +2147,23 @@ function renderDashboardHTML(appName, payloadJson) {
     padding: 8px 12px;
     font-size: 13px;
   }
+  select {
+    display: block;
+    inline-size: 100%;
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23bcd0e5' d='M1 1l4 4 4-4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 10px 6px;
+    padding-right: 32px;
+    text-indent: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   button.pill {
     cursor: pointer;
   }
@@ -2169,6 +2186,9 @@ function renderDashboardHTML(appName, payloadJson) {
     display: grid;
     grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
     gap: 8px;
+  }
+  .picker-toolbar > * {
+    min-width: 0;
   }
   .picker-toolbar input,
   .picker-toolbar select {
@@ -2677,7 +2697,7 @@ function renderDashboardHTML(appName, payloadJson) {
     showMarkers: true,
     showTotal: false,
     showTrend: false,
-    enabled: payload.datasets.amount_7.compounds.map(c => c.name),
+    enabled: [],
     hoverX: null,
     pinchStartDistance: null,
     pinchStartDays: null,
@@ -2881,6 +2901,37 @@ function renderDashboardHTML(appName, payloadJson) {
     return payload.rows.slice();
   }
 
+  function compoundHasVisibleSignal(compound) {
+    if (!compound) return false;
+    if (Array.isArray(compound.markers) && compound.markers.length > 0) return true;
+    return Array.isArray(compound.points) && compound.points.some(function(point) {
+      return Number(point[1] || 0) > 0.000001;
+    });
+  }
+
+  function currentGraphVisibleCompounds() {
+    const source = getSeries();
+    return source.compounds
+      .filter(function(compound) {
+        if (state.focusCompound && compound.name !== state.focusCompound) return false;
+        return compoundHasVisibleSignal(compound);
+      })
+      .sort(function(a, b) {
+        return String(a.display_name || a.name).localeCompare(String(b.display_name || b.name));
+      });
+  }
+
+  function normalizeEnabledCompounds() {
+    const visibleNames = currentGraphVisibleCompounds().map(function(compound) { return compound.name; });
+    state.enabled = state.enabled.filter(function(name) {
+      return visibleNames.includes(name);
+    });
+
+    if (!state.enabled.length && visibleNames.length) {
+      state.enabled = visibleNames.slice();
+    }
+  }
+
   function filteredCompounds() {
     return payload.compounds.slice();
   }
@@ -2899,10 +2950,10 @@ function renderDashboardHTML(appName, payloadJson) {
   function renderOverview() {
     const meta = document.getElementById('hero-meta');
     const status = document.getElementById('hero-status');
-    const filtered = filteredRows();
+    const visibleCompounds = currentGraphVisibleCompounds();
     if (meta) {
       const chips = [
-        { label: 'Active', value: filtered.length, note: 'substances' },
+        { label: 'Active', value: visibleCompounds.length, note: 'in view' },
         { label: 'Schedules', value: payload.overview.enabled_schedule_count || 0, note: 'enabled' },
         { label: 'Logs', value: payload.overview.recent_injection_count || 0, note: 'last 7d' }
       ];
@@ -3165,7 +3216,15 @@ function renderDashboardHTML(appName, payloadJson) {
     }
     empty.style.display = 'none';
 
-    const visibleRows = filteredRows();
+    const visibleNames = currentGraphVisibleCompounds().map(function(compound) { return compound.name; });
+    const visibleRows = filteredRows().filter(function(row) {
+      return visibleNames.includes(row.name);
+    });
+
+    if (!visibleRows.length) {
+      root.innerHTML = '<div class="entry-note">No active substances in the current graph window.</div>';
+      return;
+    }
 
     root.innerHTML = visibleRows.map(r => {
       const nextText = r.next ? relativeFromNow(r.next) : 'No schedule';
@@ -3217,6 +3276,7 @@ function renderDashboardHTML(appName, payloadJson) {
     if (state.focusCompound) syncPickerToCompound('focus', state.focusCompound);
     syncPickerInputs('focus');
     fillFocusCompoundSelect();
+    normalizeEnabledCompounds();
     saveUiPrefs();
     draw(false);
     showToast(state.focusCompound ? 'Focused chart on selected compound.' : 'Cleared chart focus.');
@@ -3356,6 +3416,7 @@ function renderDashboardHTML(appName, payloadJson) {
     syncPickerInputs('schedule');
     syncPickerInputs('focus');
     fillFocusCompoundSelect();
+    normalizeEnabledCompounds();
 
     renderOverview();
     updateWorkspaceVisibility();
@@ -3594,6 +3655,7 @@ function renderDashboardHTML(appName, payloadJson) {
   }
 
   function toggleCompound(name) {
+    if (!currentGraphVisibleCompounds().some(function(compound) { return compound.name === name; })) return;
     if (state.enabled.includes(name)) {
       state.enabled = state.enabled.filter(x => x !== name);
     } else {
@@ -3622,15 +3684,7 @@ function renderDashboardHTML(appName, payloadJson) {
   }
 
   function graphLegendCompounds() {
-    const source = getSeries();
-    return source.compounds
-      .filter(function(compound) {
-        if (state.focusCompound && compound.name !== state.focusCompound) return false;
-        return Array.isArray(compound.points) && compound.points.length > 1;
-      })
-      .sort(function(a, b) {
-        return String(a.display_name || a.name).localeCompare(String(b.display_name || b.name));
-      });
+    return currentGraphVisibleCompounds();
   }
 
   function buildLegend() {
@@ -3712,6 +3766,7 @@ function renderDashboardHTML(appName, payloadJson) {
   }
 
   function draw(chartOnly) {
+    normalizeEnabledCompounds();
     if (!chartOnly) {
       renderCards();
       buildLegend();

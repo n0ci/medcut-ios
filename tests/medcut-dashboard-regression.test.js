@@ -41,8 +41,8 @@ test('legend uses data-compound wiring instead of inline toggle function call', 
 
   assert.match(
     source,
-    /function graphLegendCompounds\(\)/,
-    'Expected legend entries to be derived from the current graph window, not the full catalog.'
+    /function graphLegendCompounds\(\)\s*\{\s*return currentGraphVisibleCompounds\(\);/,
+    'Expected legend entries to be derived from current graph-visible compounds, not the full catalog.'
   );
 });
 
@@ -148,6 +148,24 @@ test('dashboard keeps only essential graph controls and simple ui preferences', 
     /const BROWSER_DEFAULT_CATEGORY = 'general';[\s\S]*?function browserTitleCase\(value\)/,
     'Expected browser-local fallback helpers instead of Scriptable-only globals in the WebView.'
   );
+
+  assert.match(
+    source,
+    /function currentGraphVisibleCompounds\(\)[\s\S]*?return compoundHasVisibleSignal\(compound\);/,
+    'Expected graph-visible compounds to be based on actual visible signal, not every catalog series.'
+  );
+
+  assert.match(
+    source,
+    /function normalizeEnabledCompounds\(\)[\s\S]*?if \(!state\.enabled\.length && visibleNames\.length\) \{\s*state\.enabled = visibleNames\.slice\(\);/,
+    'Expected enabled legend state to be normalized against current graph-visible compounds.'
+  );
+
+  assert.match(
+    source,
+    /const chips = \[\s*\{ label: 'Active', value: visibleCompounds\.length, note: 'in view' \}/,
+    'Expected the Active header chip to reflect current graph-visible compounds.'
+  );
 });
 
 test('dashboard forms support class-first and typed substance filtering', () => {
@@ -173,6 +191,18 @@ test('dashboard forms support class-first and typed substance filtering', () => 
     source,
     /function compoundsForPicker\(kind\)/,
     'Expected shared picker filtering logic across dashboard selectors.'
+  );
+
+  assert.match(
+    source,
+    /select \{[\s\S]*?inline-size: 100%;[\s\S]*?-webkit-appearance: none;[\s\S]*?padding-right: 32px;[\s\S]*?text-indent: 0;/,
+    'Expected select controls to use explicit mobile-safe sizing and non-clipping styling.'
+  );
+
+  assert.match(
+    source,
+    /\.picker-toolbar > \* \{\s*min-width: 0;/,
+    'Expected picker toolbar children to be shrinkable so class labels do not clip.'
   );
 });
 

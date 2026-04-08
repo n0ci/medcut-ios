@@ -216,6 +216,12 @@ test('dashboard forms support class-first and typed substance filtering', () => 
     /function renderCategoryChips\(kind\)/,
     'Expected class chip rendering helper for dashboard pickers.'
   );
+
+  assert.match(
+    source,
+    /\.category-chip-row \.pill \{[\s\S]*?flex: 0 0 auto;[\s\S]*?min-width: max-content;[\s\S]*?white-space: nowrap;/,
+    'Expected class chips to keep their content width so labels are not flex-compressed.'
+  );
 });
 
 test('header uses compact count chips and status cards expand for details', () => {

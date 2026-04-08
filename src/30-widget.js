@@ -481,10 +481,14 @@ function renderDashboardHTML(appName, payloadJson) {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
+    align-items: flex-start;
   }
   .category-chip-row .pill {
     font-size: 12px;
     padding: 7px 10px;
+    flex: 0 0 auto;
+    min-width: max-content;
+    white-space: nowrap;
   }
   .action-rail {
     display: grid;

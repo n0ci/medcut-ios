@@ -89,27 +89,45 @@ test('buildSeries uses finer temporal resolution for short windows', () => {
 test('current concentration cards are computed from full history (logged + schedule)', () => {
   assert.match(
     source,
-    /amountForCompoundAt\(data, name, now, \{\s*includeProtocols: true,\s*protocolOptions: \{ includePast: true, includeFuture: false \}\s*\}\)/,
+    /const protocolOptions = protocolOptionsForTime\(now, now\)/,
+    'Expected summary rows to derive protocol inclusion from a shared helper at current time.'
+  );
+
+  assert.match(
+    source,
+    /amountForCompoundAt\(data, name, now, \{\s*includeProtocols: true,\s*protocolOptions: protocolOptions\s*\}\)/,
     'Expected current amount to include both logged and scheduled history events.'
   );
 
   assert.match(
     source,
-    /concentrationForCompoundAt\(data, name, now, \{\s*includeProtocols: true,\s*protocolOptions: \{ includePast: true, includeFuture: false \}\s*\}\)/,
+    /concentrationForCompoundAt\(data, name, now, \{\s*includeProtocols: true,\s*protocolOptions: protocolOptions\s*\}\)/,
     'Expected current concentration to include both logged and scheduled history events.'
   );
 });
 
-test('graph series include both past and future protocol events from schedule history', () => {
+test('graph series derive protocol inclusion from sample-time semantics', () => {
   assert.match(
     source,
-    /protocolOptions: \{ includePast: true, includeFuture: true \}/,
-    'Expected graph calculations to include schedule events across the displayed window.'
+    /function protocolOptionsForTime\(referenceNow, evaluationTime\)/,
+    'Expected shared protocol options helper for current and graph calculations.'
   );
 
   assert.match(
     source,
-    /const includePast = Boolean\(options && options\.includePast\)/,
-    'Expected protocol generation to support explicit past inclusion toggle.'
+    /const protocolOptions = protocolOptionsForTime\(now, time\)/,
+    'Expected graph point calculations to use sample-time protocol inclusion.'
+  );
+
+  assert.match(
+    source,
+    /const includePast = options && typeof options\.includePast === "boolean" \? options\.includePast : true/,
+    'Expected protocol generation to default to including past schedule events unless explicitly disabled.'
+  );
+
+  assert.match(
+    source,
+    /const includeFuture = options && typeof options\.includeFuture === "boolean" \? options\.includeFuture : true/,
+    'Expected protocol generation to default to including future schedule events unless explicitly disabled.'
   );
 });

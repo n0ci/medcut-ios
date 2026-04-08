@@ -279,7 +279,7 @@ async function ensureDataFiles() {
     function migrateInjection(injection, compounds) {
       if (!isObject(injection)) return null
       const compound = String(injection.compound || "").trim()
-      if (!compound || !compounds[compound]) return null
+      if (!compound) return null
 
       const dose = toNumber(injection.dose_mg != null ? injection.dose_mg : injection.dose, NaN)
       const time = new Date(injection.time)
@@ -298,7 +298,7 @@ async function ensureDataFiles() {
     function migrateProtocol(protocol, compounds) {
       if (!isObject(protocol)) return null
       const compound = String(protocol.compound || "").trim()
-      if (!compound || !compounds[compound]) return null
+      if (!compound) return null
 
       const start = new Date(protocol.start)
       const dose = toNumber(protocol.dose_mg != null ? protocol.dose_mg : protocol.dose, NaN)
@@ -656,8 +656,8 @@ async function ensureDataFiles() {
     function generateProtocolEvents(data, compoundName, fromTime, toTime, options) {
       const events = []
       const now = new Date()
-      const includePast = Boolean(options && options.includePast)
-      const includeFuture = options && options.includeFuture === false ? false : true
+      const includePast = options && typeof options.includePast === "boolean" ? options.includePast : true
+      const includeFuture = options && typeof options.includeFuture === "boolean" ? options.includeFuture : true
       let globalCount = 0
 
       for (const protocol of data.protocols) {
@@ -743,10 +743,20 @@ async function ensureDataFiles() {
       return MODEL_CONFIDENCE[quality] || MODEL_CONFIDENCE.rough
     }
 
+    function protocolOptionsForTime(referenceNow, evaluationTime) {
+      const now = isValidDate(referenceNow) ? referenceNow : new Date()
+      const evalTime = isValidDate(evaluationTime) ? evaluationTime : now
+      return {
+        includePast: true,
+        includeFuture: evalTime > now
+      }
+    }
+
     function summaryRows(data) {
       const now = new Date()
       const names = activeCompoundNames(data)
       const rows = []
+      const protocolOptions = protocolOptionsForTime(now, now)
 
       for (const name of names) {
         const compound = data.compounds[name]
@@ -754,11 +764,11 @@ async function ensureDataFiles() {
 
         const amount = amountForCompoundAt(data, name, now, {
           includeProtocols: true,
-          protocolOptions: { includePast: true, includeFuture: false }
+          protocolOptions: protocolOptions
         })
         const concentration = concentrationForCompoundAt(data, name, now, {
           includeProtocols: true,
-          protocolOptions: { includePast: true, includeFuture: false }
+          protocolOptions: protocolOptions
         })
         const nextDose = nextScheduledDose(data, name, now)
         const lastDose = data.injections
@@ -815,16 +825,17 @@ async function ensureDataFiles() {
         const points = []
         for (let t = start.getTime(); t <= end.getTime(); t += stepMs) {
           const time = new Date(t)
+          const protocolOptions = protocolOptionsForTime(now, time)
           let value = 0
           if (mode === "concentration") {
             value = concentrationForCompoundAt(data, name, time, {
               includeProtocols: true,
-              protocolOptions: { includePast: true, includeFuture: true }
+              protocolOptions: protocolOptions
             })
           } else {
             value = amountForCompoundAt(data, name, time, {
               includeProtocols: true,
-              protocolOptions: { includePast: true, includeFuture: true }
+              protocolOptions: protocolOptions
             })
           }
           points.push([iso(time), Number(Math.max(0, value || 0).toFixed(6))])

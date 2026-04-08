@@ -188,6 +188,34 @@ function makeData(overrides) {
   return { data, compoundId };
 }
 
+function makeTirzepatideData(injections) {
+  return makeData({
+    compound: {
+      display_name: 'Tirzepatide',
+      half_life_days: 5,
+      bioavailability: 0.8,
+      vd_l: 9.7,
+      route: 'subcutaneous',
+      model_quality: 'good'
+    },
+    injections: injections
+  });
+}
+
+function expectedTirzepatideAmountAt(evalTimeIso, injections) {
+  const halfLifeDays = 5;
+  const bioavailability = 0.8;
+  const elimination = Math.log(2) / halfLifeDays;
+  const evalMs = new Date(evalTimeIso).getTime();
+
+  return injections.reduce((sum, shot) => {
+    const t = new Date(shot.time).getTime();
+    if (!Number.isFinite(t) || t > evalMs) return sum;
+    const ageDays = (evalMs - t) / 86400000;
+    return sum + shot.dose_mg * bioavailability * Math.exp(-elimination * ageDays);
+  }, 0);
+}
+
 test('PK math stacks doses: 10 mg + 2 mg stays near 12 mg with negligible decay', () => {
   const runtime = buildRuntime('2026-04-08T12:00:00.000Z');
   const { data, compoundId } = makeData({
@@ -316,4 +344,117 @@ test('Graph preserves forecast behavior for future scheduled doses', () => {
 
   assert.ok(nowPoint && nowPoint.v < 0.01, 'Expected near-zero current graph value before future scheduled dose occurs.');
   assert.ok(futureMax > 9.9, 'Expected future graph forecast to reflect upcoming scheduled dose.');
+});
+
+test('Long-running protocol still contributes to current amount in lookback window', () => {
+  const runtime = buildRuntime('2026-04-08T12:00:00.000Z');
+  const { data, compoundId } = makeData({
+    compound: { half_life_days: 50, bioavailability: 1, vd_l: 1 },
+    protocols: [
+      {
+        start: '2020-01-01T12:00:00.000Z',
+        dose_mg: 1,
+        every_days: 1,
+        occurrences: null,
+        enabled: true
+      }
+    ]
+  });
+
+  const when = new Date('2026-04-08T12:00:00.000Z');
+  const amount = runtime.amountForCompoundAt(data, compoundId, when, {
+    includeProtocols: true,
+    protocolOptions: { includePast: true, includeFuture: false }
+  });
+
+  assert.ok(amount > 1, 'Expected steady-state accumulation from long-running daily protocol history.');
+});
+
+test('Adaptive lookback includes older doses for long half-life compounds', () => {
+  const runtime = buildRuntime('2026-04-08T12:00:00.000Z');
+  const { data, compoundId } = makeData({
+    compound: { half_life_days: 400, bioavailability: 1, vd_l: 1 },
+    injections: [{ dose_mg: 10, time: '2024-04-10T12:00:00.000Z' }]
+  });
+
+  const when = new Date('2026-04-08T12:00:00.000Z');
+  const amount = runtime.amountForCompoundAt(data, compoundId, when, { includeProtocols: false });
+
+  assert.ok(amount > 2, 'Expected older injection to remain in scope for very long half-life compounds.');
+});
+
+test('Tirzepatide concentration matches PK expectation for mixed doses and intervals', () => {
+  const runtime = buildRuntime('2026-04-08T12:00:00.000Z');
+  const shots = [
+    { dose_mg: 2.5, time: '2026-03-25T12:00:00.000Z' },
+    { dose_mg: 5.0, time: '2026-04-01T12:00:00.000Z' },
+    { dose_mg: 7.5, time: '2026-04-06T12:00:00.000Z' }
+  ];
+  const { data, compoundId } = makeTirzepatideData(shots);
+
+  const whenIso = '2026-04-08T12:00:00.000Z';
+  const when = new Date(whenIso);
+
+  const amount = runtime.amountForCompoundAt(data, compoundId, when, { includeProtocols: false });
+  const concentration = runtime.concentrationForCompoundAt(data, compoundId, when, { includeProtocols: false });
+
+  const expectedAmount = expectedTirzepatideAmountAt(whenIso, shots);
+  const expectedConcentration = expectedAmount / 9.7;
+
+  approxEqual(amount, expectedAmount, 0.00001, 'Expected tirzepatide amount to match closed-form multi-shot PK sum.');
+  approxEqual(concentration, expectedConcentration, 0.00001, 'Expected tirzepatide concentration to match closed-form PK amount/Vd.');
+});
+
+test('Tirzepatide concentration increases with higher shot frequency at fixed dose', () => {
+  const runtime = buildRuntime('2026-04-08T12:00:00.000Z');
+  const frequentShots = [
+    { dose_mg: 5, time: '2026-03-09T12:00:00.000Z' },
+    { dose_mg: 5, time: '2026-03-14T12:00:00.000Z' },
+    { dose_mg: 5, time: '2026-03-19T12:00:00.000Z' },
+    { dose_mg: 5, time: '2026-03-24T12:00:00.000Z' },
+    { dose_mg: 5, time: '2026-03-29T12:00:00.000Z' },
+    { dose_mg: 5, time: '2026-04-03T12:00:00.000Z' },
+    { dose_mg: 5, time: '2026-04-08T12:00:00.000Z' }
+  ];
+  const sparseShots = [
+    { dose_mg: 5, time: '2026-03-09T12:00:00.000Z' },
+    { dose_mg: 5, time: '2026-03-19T12:00:00.000Z' },
+    { dose_mg: 5, time: '2026-03-29T12:00:00.000Z' },
+    { dose_mg: 5, time: '2026-04-08T12:00:00.000Z' }
+  ];
+
+  const frequent = makeTirzepatideData(frequentShots);
+  const sparse = makeTirzepatideData(sparseShots);
+  const when = new Date('2026-04-08T12:00:00.000Z');
+
+  const cFrequent = runtime.concentrationForCompoundAt(frequent.data, frequent.compoundId, when, { includeProtocols: false });
+  const cSparse = runtime.concentrationForCompoundAt(sparse.data, sparse.compoundId, when, { includeProtocols: false });
+
+  assert.ok(cFrequent > cSparse, 'Expected higher tirzepatide concentration with more frequent same-dose shots.');
+  assert.ok(cFrequent > cSparse * 1.3, 'Expected materially higher concentration with 5-day frequency versus 10-day frequency.');
+});
+
+test('Tirzepatide concentration responds to mixed dose and frequency pattern changes', () => {
+  const runtime = buildRuntime('2026-04-08T12:00:00.000Z');
+  const lowPattern = [
+    { dose_mg: 2.5, time: '2026-03-11T12:00:00.000Z' },
+    { dose_mg: 2.5, time: '2026-03-25T12:00:00.000Z' },
+    { dose_mg: 2.5, time: '2026-04-08T12:00:00.000Z' }
+  ];
+  const intensifiedPattern = [
+    { dose_mg: 2.5, time: '2026-03-11T12:00:00.000Z' },
+    { dose_mg: 5.0, time: '2026-03-25T12:00:00.000Z' },
+    { dose_mg: 7.5, time: '2026-04-01T12:00:00.000Z' },
+    { dose_mg: 7.5, time: '2026-04-08T12:00:00.000Z' }
+  ];
+
+  const low = makeTirzepatideData(lowPattern);
+  const high = makeTirzepatideData(intensifiedPattern);
+  const when = new Date('2026-04-08T12:00:00.000Z');
+
+  const cLow = runtime.concentrationForCompoundAt(low.data, low.compoundId, when, { includeProtocols: false });
+  const cHigh = runtime.concentrationForCompoundAt(high.data, high.compoundId, when, { includeProtocols: false });
+
+  assert.ok(cHigh > cLow, 'Expected higher concentration when both dose and shot frequency are increased.');
+  assert.ok(cHigh > cLow * 2, 'Expected strong concentration uplift under intensified tirzepatide regimen.');
 });

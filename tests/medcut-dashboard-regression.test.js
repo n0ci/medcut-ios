@@ -176,7 +176,7 @@ test('dashboard includes in-app forms for injection logging and schedule creatio
   );
 });
 
-test('past injections are editable from history list', () => {
+test('past injections are editable and deletable from history list', () => {
   assert.match(
     source,
     /<button class="pill history-edit" type="button" data-edit-id="/,
@@ -185,8 +185,20 @@ test('past injections are editable from history list', () => {
 
   assert.match(
     source,
+    /<button class="pill history-delete" type="button" data-delete-id="/,
+    'Expected each history row to include a Delete button with injection id wiring.'
+  );
+
+  assert.match(
+    source,
     /function startEditInjection\(injectionId\)/,
     'Expected edit handler to prefill the log form with selected injection values.'
+  );
+
+  assert.match(
+    source,
+    /function deleteHistoryInjection\(injectionId\)/,
+    'Expected delete handler for removing selected injection entries.'
   );
 
   assert.match(
@@ -203,8 +215,20 @@ test('past injections are editable from history list', () => {
 
   assert.match(
     source,
+    /if \(action === "delete_injection"\)/,
+    'Expected shortcut backend to support deleting existing injections.'
+  );
+
+  assert.match(
+    source,
     /updateInjectionEntry\(data, injectionId, compound, dose, time, input\.notes \|\| ""\)/,
     'Expected edit action to persist injection updates through storage layer helper.'
+  );
+
+  assert.match(
+    source,
+    /removeInjectionEntry\(data, injectionId\)/,
+    'Expected delete action to persist injection removal through storage layer helper.'
   );
 });
 
@@ -307,6 +331,20 @@ test('graph controls are below chart and forms are collapsed by default', () => 
     source,
     /id="custom-days" type="number"/,
     'Expected custom day window numeric control.'
+  );
+
+  assert.match(
+    source,
+    /id="refresh-dashboard" class="pill" type="button" onclick="refreshDashboard\(\)"/,
+    'Expected explicit dashboard refresh control in graph toolbar.'
+  );
+});
+
+test('dashboard refresh action reopens dashboard run', () => {
+  assert.match(
+    source,
+    /function refreshDashboard\(\) \{\s*const url = buildRunUrl\(\{ action: 'dashboard', ui: 'open' \}\);\s*window\.location\.href = url;\s*\}/,
+    'Expected refresh action to relaunch Scriptable dashboard with fresh payload.'
   );
 });
 

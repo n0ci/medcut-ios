@@ -661,41 +661,56 @@ async function ensureDataFiles() {
       let globalCount = 0
 
       for (const protocol of data.protocols) {
-        if (globalCount > MAX_PROTOCOL_EVENTS) break
+        if (globalCount >= MAX_PROTOCOL_EVENTS) break
         if (protocol.enabled === false || protocol.compound !== compoundName) continue
 
         const start = dt(protocol.start)
         const stepDays = Math.max(0.25, toNumber(protocol.every_days, 7))
+        const stepMs = stepDays * 86400000
         const dose = toNumber(protocol.dose_mg, 0)
         const occurrences = protocol.occurrences != null ? Math.max(0, toNumber(protocol.occurrences, 0)) : null
         const until = protocol.until ? dt(protocol.until) : null
 
         if (!isValidDate(start) || !(dose > 0)) continue
 
+        const windowStart = isValidDate(fromTime) ? fromTime : start
+        const windowEnd = isValidDate(toTime) ? toTime : new Date(now.getTime() + 365 * 86400000)
+
         let count = 0
         let t = new Date(start)
-        while (true) {
-          if (globalCount > MAX_PROTOCOL_EVENTS) break
-          if (occurrences != null && count >= occurrences) break
-          if (until && isValidDate(until) && t > until) break
-          if (t > toTime) break
 
-          if (t >= fromTime) {
-            const isPast = t < now
-            if ((isPast && includePast) || (!isPast && includeFuture)) {
-              events.push({
-                compound: compoundName,
-                dose_mg: dose,
-                time: iso(t),
-                source: "protocol"
-              })
-              globalCount += 1
-            }
+        if (windowStart > start) {
+          const skipped = Math.floor((windowStart.getTime() - start.getTime()) / stepMs)
+          if (skipped > 0) {
+            count = skipped
+            t = new Date(start.getTime() + skipped * stepMs)
           }
 
-          t = new Date(t.getTime() + stepDays * 86400000)
+          while (t < windowStart) {
+            t = new Date(t.getTime() + stepMs)
+            count += 1
+          }
+        }
+
+        while (true) {
+          if (globalCount >= MAX_PROTOCOL_EVENTS) break
+          if (occurrences != null && count >= occurrences) break
+          if (until && isValidDate(until) && t > until) break
+          if (t > windowEnd) break
+
+          const isPast = t < now
+          if ((isPast && includePast) || (!isPast && includeFuture)) {
+            events.push({
+              compound: compoundName,
+              dose_mg: dose,
+              time: iso(t),
+              source: "protocol"
+            })
+            globalCount += 1
+          }
+
+          t = new Date(t.getTime() + stepMs)
           count += 1
-          if (count > MAX_PROTOCOL_EVENTS) break
         }
       }
 
@@ -716,7 +731,9 @@ async function ensureDataFiles() {
       const compound = data.compounds[compoundName]
       if (!compound) return 0
 
-      const horizonStart = new Date(t.getTime() - HISTORY_LOOKBACK_DAYS * 86400000)
+      const halfLifeDays = Math.max(0.001, toNumber(compound.half_life_days, 1))
+      const adaptiveLookbackDays = Math.min(3650, Math.max(HISTORY_LOOKBACK_DAYS, halfLifeDays * 20))
+      const horizonStart = new Date(t.getTime() - adaptiveLookbackDays * 86400000)
       const events = allEventsForCompound(data, compoundName, horizonStart, t, options || {})
       let total = 0
       for (const event of events) total += eventAmountAtTime(event, t, compound)
@@ -989,6 +1006,64 @@ async function ensureDataFiles() {
         source_file: targetFileName
       }
       data.injections.sort(function(a, b) { return dt(a.time) - dt(b.time) })
+    }
+
+    function removeInjectionEntry(data, injectionId) {
+      const id = String(injectionId || "").trim()
+      if (!id) throw new Error("Missing injection id")
+
+      const injectionIndex = data.injections.findIndex(function(injection) {
+        return String(injection.id || "") === id
+      })
+      if (injectionIndex < 0) throw new Error("Injection not found: " + id)
+
+      const existing = data.injections[injectionIndex]
+      const existingCompound = data.compounds[existing.compound]
+      const fallbackFile = existingCompound ? existingCompound.source_file : null
+      const expectedFile = existing.source_file || fallbackFile
+
+      let sourceFileName = null
+      if (expectedFile && data.__files[expectedFile]) {
+        const directIndex = data.__files[expectedFile].history.injections.findIndex(function(injection) {
+          return String(injection.id || "") === id
+        })
+        if (directIndex >= 0) sourceFileName = expectedFile
+      }
+
+      if (!sourceFileName) {
+        const fileNames = Object.keys(data.__files)
+        for (const fileName of fileNames) {
+          const state = data.__files[fileName]
+          const idx = state.history.injections.findIndex(function(injection) {
+            return String(injection.id || "") === id
+          })
+          if (idx >= 0) {
+            sourceFileName = fileName
+            break
+          }
+        }
+      }
+
+      if (!sourceFileName) throw new Error("Injection not found in history files: " + id)
+
+      const sourceFileState = data.__files[sourceFileName]
+      const sourceIndex = sourceFileState.history.injections.findIndex(function(injection) {
+        return String(injection.id || "") === id
+      })
+      if (sourceIndex < 0) throw new Error("Injection not found in history file: " + id)
+
+      sourceFileState.history.injections.splice(sourceIndex, 1)
+      sourceFileState.history.injections.sort(function(a, b) { return dt(a.time) - dt(b.time) })
+      saveHistoryFile(sourceFileName, sourceFileState.history, sourceFileState.compounds)
+
+      data.injections.splice(injectionIndex, 1)
+      data.injections.sort(function(a, b) { return dt(a.time) - dt(b.time) })
+
+      return {
+        id: id,
+        source_file: sourceFileName,
+        compound: existing.compound
+      }
     }
 
     function addProtocolEntry(data, entry) {
@@ -1488,11 +1563,18 @@ function renderDashboardHTML(appName, payloadJson) {
   .history-item .actions {
     margin-top: 7px;
     display: flex;
+    gap: 8px;
     justify-content: flex-end;
   }
   .history-item .history-edit {
     font-size: 11px;
     padding: 5px 10px;
+  }
+  .history-item .history-delete {
+    font-size: 11px;
+    padding: 5px 10px;
+    border-color: rgba(255, 129, 129, 0.35);
+    color: #ffd1d1;
   }
   .chart-wrap {
     position: relative;
@@ -1605,6 +1687,7 @@ function renderDashboardHTML(appName, payloadJson) {
     <button id="window-30" class="pill" onclick="setWindow(30)">30d</button>
     <button id="window-90" class="pill" onclick="setWindow(90)">90d</button>
     <input id="custom-days" type="number" min="1" max="365" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="Custom days" style="width:120px" />
+    <button id="refresh-dashboard" class="pill" type="button" onclick="refreshDashboard()">Refresh</button>
     <button id="mode-amount" class="pill" onclick="setMode('amount')">Amount</button>
     <button id="mode-concentration" class="pill" onclick="setMode('concentration')">Concentration</button>
   </div>
@@ -2165,6 +2248,35 @@ function renderDashboardHTML(appName, payloadJson) {
     return 'scriptable:///run/MedCut?' + parts.join('&');
   }
 
+  function refreshDashboard() {
+    const url = buildRunUrl({ action: 'dashboard', ui: 'open' });
+    window.location.href = url;
+  }
+
+  function deleteHistoryInjection(injectionId) {
+    const id = String(injectionId || '').trim();
+    if (!id) return;
+
+    const entry = (payload.injection_history || []).find(function(item) {
+      return String(item.id || '') === id;
+    });
+    const label = entry ? (entry.display_name || entry.compound || 'this entry') : 'this entry';
+
+    let confirmed = true;
+    if (typeof window.confirm === 'function') {
+      confirmed = window.confirm('Delete ' + label + ' log entry? This cannot be undone.');
+    }
+    if (!confirmed) return;
+
+    const url = buildRunUrl({
+      action: 'delete_injection',
+      ui: 'dashboard',
+      injection_id: id
+    });
+    setFormStatus('log-status', 'Opening MedCut to delete injection...');
+    window.location.href = url;
+  }
+
   function submitLog(event) {
     event.preventDefault();
     const compound = document.getElementById('log-compound').value;
@@ -2327,12 +2439,16 @@ function renderDashboardHTML(appName, payloadJson) {
       const route = escapeHtmlText(item.route || 'unknown');
       const source = escapeHtmlText(item.source || 'log');
       const editId = item.id ? escapeHtmlText(item.id) : '';
+      const deleteId = item.id ? escapeHtmlText(item.id) : '';
       const notes = item.notes ? (' • Notes: ' + escapeHtmlText(item.notes)) : '';
       return '<div class="history-item">'
         + '<div class="top"><strong>' + display + '</strong><span>' + dose + ' mg</span></div>'
         + '<div class="meta">' + whenRel + ' • ' + whenAbs + '</div>'
         + '<div class="meta">' + category + ' • ' + route + ' • ' + source + notes + '</div>'
-        + '<div class="actions">' + (editId ? ('<button class="pill history-edit" type="button" data-edit-id="' + editId + '">Edit</button>') : '') + '</div>'
+        + '<div class="actions">'
+          + (editId ? ('<button class="pill history-edit" type="button" data-edit-id="' + editId + '">Edit</button>') : '')
+          + (deleteId ? ('<button class="pill history-delete" type="button" data-delete-id="' + deleteId + '">Delete</button>') : '')
+          + '</div>'
         + '</div>';
     }).join('');
 
@@ -2340,6 +2456,13 @@ function renderDashboardHTML(appName, payloadJson) {
     editButtons.forEach(function(button) {
       button.addEventListener('click', function() {
         startEditInjection(button.getAttribute('data-edit-id') || '');
+      });
+    });
+
+    const deleteButtons = list.querySelectorAll('button[data-delete-id]');
+    deleteButtons.forEach(function(button) {
+      button.addEventListener('click', function() {
+        deleteHistoryInjection(button.getAttribute('data-delete-id') || '');
       });
     });
   }
@@ -2873,6 +2996,29 @@ async function handleShortcut(data, input) {
       time: iso(time),
       file: categoryFilePath(c.source_file),
       history_file: historyFilePath(c.source_file)
+    })
+    return
+  }
+
+  if (action === "delete_injection") {
+    const injectionId = String(input.injection_id != null ? input.injection_id : input.id || "").trim()
+    if (!injectionId) throw new Error("Missing injection_id")
+
+    const removed = removeInjectionEntry(data, injectionId)
+    if (returnDashboard) {
+      await presentDashboard(data)
+      return
+    }
+
+    const c = data.compounds[removed.compound]
+    shortcutOutput({
+      ok: true,
+      action: "delete_injection",
+      schema_version: data.schema_version,
+      injection_id: removed.id,
+      compound: removed.compound,
+      display_name: c ? (c.display_name || titleCase(removed.compound)) : titleCase(removed.compound),
+      history_file: historyFilePath(removed.source_file)
     })
     return
   }

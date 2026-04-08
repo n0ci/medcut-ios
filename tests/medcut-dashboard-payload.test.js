@@ -201,7 +201,7 @@ test('dashboard payload includes overview counts, latest history ordering, and n
       { value: 'all', label: 'All classes' },
       { value: 'peptides', label: 'Peptides' }
     ],
-    'Expected dashboard payload to include explicit category labels for custom pickers.'
+    'Expected dashboard payload to include explicit category labels for the dashboard pickers.'
   );
 
   assert.equal(payload.datasets.amount_7.mode, 'amount');

@@ -1062,14 +1062,6 @@ function renderDashboardHTML(appName, payloadJson) {
   const payload = ${payloadJson};
   const BROWSER_DEFAULT_CATEGORY = 'general';
 
-  function browserTitleCase(value) {
-    return String(value || '')
-      .replace(/[_-]+/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .replace(/\b\w/g, function(char) { return char.toUpperCase(); });
-  }
-
   let state = {
     days: 7,
     mode: 'amount',
@@ -1095,41 +1087,29 @@ function renderDashboardHTML(appName, payloadJson) {
   const HISTORY_PAGE_SIZE = 15;
   const UI_PREFS_KEY = 'medcut.dashboard.ui.v1';
   const PENDING_TOAST_KEY = 'medcut.dashboard.pendingToast.v1';
-  const categoryOptions = Array.isArray(payload.categories) && payload.categories.length
-    ? payload.categories.map(function(item) {
-        return {
-          value: String(item && item.value || 'all'),
-          label: String(item && item.label || 'All classes')
-        };
-      })
-    : (function() {
-        const categorySet = new Set(payload.compounds.map(function(c) { return c.category || BROWSER_DEFAULT_CATEGORY; }));
-        return ['all'].concat(Array.from(categorySet).sort()).map(function(category) {
-          return {
-            value: category,
-            label: category === 'all' ? 'All classes' : browserTitleCase(category)
-          };
-        });
-      })();
+  const categoryOptions = (Array.isArray(payload.categories) && payload.categories.length
+    ? payload.categories
+    : [{ value: 'all', label: 'All classes' }]).map(function(item) {
+      return {
+        value: String(item && item.value || 'all'),
+        label: String(item && item.label || 'All classes')
+      };
+    });
 
   applySavedUiPrefs();
-
-  function availableCategories() {
-    return categoryOptions.slice();
-  }
 
   function fillCategorySelect(selectId) {
     const select = document.getElementById(selectId);
     if (!select) return;
     const current = select.value;
     select.innerHTML = '';
-    availableCategories().forEach(function(option) {
+    categoryOptions.forEach(function(option) {
       const item = document.createElement('option');
       item.value = option.value;
       item.textContent = option.label;
       select.appendChild(item);
     });
-    if (current && availableCategories().some(function(option) { return option.value === current; })) {
+    if (current && categoryOptions.some(function(option) { return option.value === current; })) {
       select.value = current;
     }
   }

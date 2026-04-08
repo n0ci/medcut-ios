@@ -139,8 +139,8 @@ test('dashboard keeps only essential graph controls and simple ui preferences', 
 
   assert.match(
     source,
-    /const BROWSER_DEFAULT_CATEGORY = 'general';[\s\S]*?function browserTitleCase\(value\)/,
-    'Expected browser-local fallback helpers instead of Scriptable-only globals in the WebView.'
+    /const BROWSER_DEFAULT_CATEGORY = 'general';[\s\S]*?const categoryOptions = \(Array\.isArray\(payload\.categories\) && payload\.categories\.length/,
+    'Expected the WebView to rely on payload-backed category options instead of Scriptable globals.'
   );
 
   assert.match(
@@ -219,7 +219,7 @@ test('dashboard forms support class-first and typed substance filtering', () => 
 
   assert.match(
     source,
-    /const categoryOptions = Array\.isArray\(payload\.categories\) && payload\.categories\.length/,
+    /const categoryOptions = \(Array\.isArray\(payload\.categories\) && payload\.categories\.length[\s\S]*?label: String\(item && item\.label \|\| 'All classes'\)/,
     'Expected class picker labels to come from payload-provided category options.'
   );
 });

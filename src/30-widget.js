@@ -920,7 +920,6 @@ function renderDashboardHTML(appName, payloadJson) {
   document.addEventListener('gestureend', e => e.preventDefault());
 
   const payload = ${payloadJson};
-  document.getElementById('schema').textContent = payload.schema_version;
 
   let state = {
     days: 7,

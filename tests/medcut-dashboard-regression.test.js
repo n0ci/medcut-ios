@@ -139,7 +139,7 @@ test('dashboard keeps only essential graph controls and simple ui preferences', 
 
   assert.doesNotMatch(
     source,
-    /Schema v<span id="schema"><\/span>|live estimate from logs and enabled schedules/,
+    /Schema v<span id="schema"><\/span>|live estimate from logs and enabled schedules|getElementById\('schema'\)/,
     'The top header should avoid verbose schema/live-estimate copy.'
   );
 });

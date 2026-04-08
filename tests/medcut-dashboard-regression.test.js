@@ -359,10 +359,10 @@ test('entry form controls are responsive and can shrink without overflow', () =>
     'Expected row children to allow shrinking so date/time controls do not overflow.'
   );
 
-  assert.match(
+  assert.doesNotMatch(
     source,
-    /\.entry-row\.compact-datetime \{\s*grid-template-columns: 1fr;/,
-    'Expected date and time controls to stack vertically for reliable mobile layout.'
+    /compact-datetime/,
+    'Expected native date/time controls to be standalone field rows, not wrapped in a compact datetime grid.'
   );
 
   assert.match(
@@ -373,7 +373,7 @@ test('entry form controls are responsive and can shrink without overflow', () =>
 
   assert.match(
     source,
-    /\.entry-card input\[type="date"\],[\s\S]*?min-inline-size: 0;[\s\S]*?inline-size: 100%;/,
+    /\.entry-card input\[type="date"\],[\s\S]*?width: 100%;[\s\S]*?max-width: 100%;[\s\S]*?min-inline-size: 0;[\s\S]*?inline-size: 100%;[\s\S]*?box-sizing: border-box;/,
     'Expected date/time controls to override intrinsic WebView width.'
   );
 
@@ -381,6 +381,12 @@ test('entry form controls are responsive and can shrink without overflow', () =>
     source,
     /<label class="field-label" for="log-date">Date<\/label>[\s\S]*?<input id="log-date" type="date" required>[\s\S]*?<label class="field-label" for="log-time">Time<\/label>[\s\S]*?<input id="log-time" type="time" required>/,
     'Expected Quick Log date and time controls to be explicit labeled fields.'
+  );
+
+  assert.match(
+    source,
+    /<label class="field-label" for="schedule-start-date">Start date<\/label>[\s\S]*?<input id="schedule-start-date" type="date" required>[\s\S]*?<label class="field-label" for="schedule-start-time">Start time<\/label>[\s\S]*?<input id="schedule-start-time" type="time" required>/,
+    'Expected Schedule date and time controls to be standalone labeled fields.'
   );
 
   assert.match(

@@ -560,9 +560,6 @@ function renderDashboardHTML(appName, payloadJson) {
     grid-template-columns: 1fr 1fr;
     gap: 8px;
   }
-  .entry-row.compact-datetime {
-    grid-template-columns: 1fr;
-  }
   .entry-row > * {
     min-width: 0;
   }
@@ -585,10 +582,16 @@ function renderDashboardHTML(appName, payloadJson) {
   }
   .entry-card input[type="date"],
   .entry-card input[type="time"] {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     min-inline-size: 0;
     inline-size: 100%;
     display: block;
     min-height: 40px;
+    box-sizing: border-box;
+    overflow: hidden;
+    font: inherit;
   }
   .entry-card textarea {
     min-height: 52px;
@@ -870,15 +873,13 @@ function renderDashboardHTML(appName, payloadJson) {
               <label class="field-label" for="log-dose">Dose</label>
               <input id="log-dose" type="number" min="0" step="0.01" placeholder="Dose mg" required>
             </div>
-            <div class="entry-row compact-datetime">
-              <div class="field-stack">
-                <label class="field-label" for="log-date">Date</label>
-                <input id="log-date" type="date" required>
-              </div>
-              <div class="field-stack">
-                <label class="field-label" for="log-time">Time</label>
-                <input id="log-time" type="time" required>
-              </div>
+            <div class="field-stack">
+              <label class="field-label" for="log-date">Date</label>
+              <input id="log-date" type="date" required>
+            </div>
+            <div class="field-stack">
+              <label class="field-label" for="log-time">Time</label>
+              <input id="log-time" type="time" required>
             </div>
             <div class="field-stack">
               <label class="field-label" for="log-notes">Notes</label>
@@ -929,15 +930,13 @@ function renderDashboardHTML(appName, payloadJson) {
                 <input id="schedule-every" type="number" min="0.25" step="0.25" placeholder="Every days" value="7" required>
               </div>
             </div>
-            <div class="entry-row compact-datetime">
-              <div class="field-stack">
-                <label class="field-label" for="schedule-start-date">Start date</label>
-                <input id="schedule-start-date" type="date" required>
-              </div>
-              <div class="field-stack">
-                <label class="field-label" for="schedule-start-time">Start time</label>
-                <input id="schedule-start-time" type="time" required>
-              </div>
+            <div class="field-stack">
+              <label class="field-label" for="schedule-start-date">Start date</label>
+              <input id="schedule-start-date" type="date" required>
+            </div>
+            <div class="field-stack">
+              <label class="field-label" for="schedule-start-time">Start time</label>
+              <input id="schedule-start-time" type="time" required>
             </div>
             <div class="field-stack">
               <label class="field-label" for="schedule-occurrences">Occurrences</label>

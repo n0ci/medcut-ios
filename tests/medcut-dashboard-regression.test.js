@@ -373,7 +373,13 @@ test('entry form controls are responsive and can shrink without overflow', () =>
 
   assert.match(
     source,
-    /\.entry-card input\[type="date"\],[\s\S]*?width: 100%;[\s\S]*?width: -webkit-fill-available;[\s\S]*?max-width: 100%;[\s\S]*?max-width: -webkit-fill-available;[\s\S]*?min-inline-size: 0;[\s\S]*?inline-size: 100%;[\s\S]*?box-sizing: border-box;[\s\S]*?-webkit-appearance: none;/,
+    /\.native-temporal-shell \{[\s\S]*?display: flex;[\s\S]*?width: 100%;[\s\S]*?overflow: hidden;/,
+    'Expected native temporal controls to render inside a width-constrained shell.'
+  );
+
+  assert.match(
+    source,
+    /\.entry-card input\[type="date"\],[\s\S]*?width: 100%;[\s\S]*?width: -webkit-fill-available;[\s\S]*?display: inline-flex;[\s\S]*?-webkit-appearance: none;[\s\S]*?background: transparent;[\s\S]*?border: 0;[\s\S]*?padding: 0;/,
     'Expected date/time controls to override intrinsic WebView width.'
   );
 
@@ -391,13 +397,13 @@ test('entry form controls are responsive and can shrink without overflow', () =>
 
   assert.match(
     source,
-    /<label class="field-label" for="log-date">Date<\/label>[\s\S]*?<input id="log-date" type="date" required>[\s\S]*?<label class="field-label" for="log-time">Time<\/label>[\s\S]*?<input id="log-time" type="time" required>/,
+    /<label class="field-label" for="log-date">Date<\/label>[\s\S]*?<div class="native-temporal-shell">[\s\S]*?<input id="log-date" type="date" required>[\s\S]*?<\/div>[\s\S]*?<label class="field-label" for="log-time">Time<\/label>[\s\S]*?<div class="native-temporal-shell">[\s\S]*?<input id="log-time" type="time" required>/,
     'Expected Quick Log date and time controls to be explicit labeled fields.'
   );
 
   assert.match(
     source,
-    /<label class="field-label" for="schedule-start-date">Start date<\/label>[\s\S]*?<input id="schedule-start-date" type="date" required>[\s\S]*?<label class="field-label" for="schedule-start-time">Start time<\/label>[\s\S]*?<input id="schedule-start-time" type="time" required>/,
+    /<label class="field-label" for="schedule-start-date">Start date<\/label>[\s\S]*?<div class="native-temporal-shell">[\s\S]*?<input id="schedule-start-date" type="date" required>[\s\S]*?<\/div>[\s\S]*?<label class="field-label" for="schedule-start-time">Start time<\/label>[\s\S]*?<div class="native-temporal-shell">[\s\S]*?<input id="schedule-start-time" type="time" required>/,
     'Expected Schedule date and time controls to be standalone labeled fields.'
   );
 

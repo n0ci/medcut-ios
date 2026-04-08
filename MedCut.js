@@ -2319,6 +2319,19 @@ function renderDashboardHTML(appName, payloadJson) {
   .entry-card input {
     line-height: 1.25;
   }
+  .native-temporal-shell {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.14);
+    background: rgba(255,255,255,0.07);
+    padding: 8px 10px;
+    overflow: hidden;
+  }
   .entry-card input[type="date"],
   .entry-card input[type="time"] {
     width: 100%;
@@ -2329,13 +2342,19 @@ function renderDashboardHTML(appName, payloadJson) {
     min-inline-size: 0;
     inline-size: 100%;
     max-inline-size: 100%;
-    display: block;
-    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    min-height: 22px;
     box-sizing: border-box;
     overflow: hidden;
     font: inherit;
     -webkit-appearance: none;
     appearance: none;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    margin: 0;
     background-clip: padding-box;
   }
   .entry-card input[type="date"]::-webkit-date-and-time-value,
@@ -2643,11 +2662,15 @@ function renderDashboardHTML(appName, payloadJson) {
             </div>
             <div class="field-stack">
               <label class="field-label" for="log-date">Date</label>
-              <input id="log-date" type="date" required>
+              <div class="native-temporal-shell">
+                <input id="log-date" type="date" required>
+              </div>
             </div>
             <div class="field-stack">
               <label class="field-label" for="log-time">Time</label>
-              <input id="log-time" type="time" required>
+              <div class="native-temporal-shell">
+                <input id="log-time" type="time" required>
+              </div>
             </div>
             <div class="field-stack">
               <label class="field-label" for="log-notes">Notes</label>
@@ -2700,11 +2723,15 @@ function renderDashboardHTML(appName, payloadJson) {
             </div>
             <div class="field-stack">
               <label class="field-label" for="schedule-start-date">Start date</label>
-              <input id="schedule-start-date" type="date" required>
+              <div class="native-temporal-shell">
+                <input id="schedule-start-date" type="date" required>
+              </div>
             </div>
             <div class="field-stack">
               <label class="field-label" for="schedule-start-time">Start time</label>
-              <input id="schedule-start-time" type="time" required>
+              <div class="native-temporal-shell">
+                <input id="schedule-start-time" type="time" required>
+              </div>
             </div>
             <div class="field-stack">
               <label class="field-label" for="schedule-occurrences">Occurrences</label>

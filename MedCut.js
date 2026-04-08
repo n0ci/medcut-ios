@@ -1479,12 +1479,12 @@ function renderDashboardHTML(appName, payloadJson) {
     font-size: 13px;
   }
   .hero {
-    padding: 18px;
+    padding: 16px 18px;
     border-radius: 24px;
     background: linear-gradient(180deg, rgba(11, 23, 38, 0.96), rgba(11, 24, 39, 0.84));
     border: 1px solid rgba(155, 196, 227, 0.14);
     box-shadow: 0 18px 40px rgba(3, 8, 14, 0.34);
-    margin-bottom: 14px;
+    margin-bottom: 12px;
   }
   .hero-top {
     display: flex;
@@ -1496,7 +1496,7 @@ function renderDashboardHTML(appName, payloadJson) {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     padding: 6px 10px;
     border-radius: 999px;
     background: var(--accent-soft);
@@ -1512,15 +1512,15 @@ function renderDashboardHTML(appName, payloadJson) {
   }
   .overview-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
-    margin-top: 16px;
+    margin-top: 12px;
   }
   .overview-card {
     background: rgba(255,255,255,0.04);
     border: 1px solid rgba(163, 198, 226, 0.14);
-    border-radius: 18px;
-    padding: 12px;
+    border-radius: 16px;
+    padding: 11px 12px;
   }
   .overview-label {
     color: var(--muted);
@@ -1529,8 +1529,8 @@ function renderDashboardHTML(appName, payloadJson) {
     letter-spacing: 0.4px;
   }
   .overview-value {
-    margin-top: 6px;
-    font-size: 24px;
+    margin-top: 5px;
+    font-size: 22px;
     font-weight: 750;
   }
   .overview-note {
@@ -1538,37 +1538,10 @@ function renderDashboardHTML(appName, payloadJson) {
     color: var(--muted);
     font-size: 12px;
   }
-  .action-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 10px;
-    margin: 0 0 14px;
-  }
-  .action-card {
-    display: block;
-    width: 100%;
-    text-align: left;
-    background: var(--panel);
-    border: 1px solid var(--panel-border);
-    border-radius: 18px;
-    padding: 14px;
-    color: var(--text);
-  }
-  .action-card strong {
-    display: block;
-    font-size: 14px;
-    margin-bottom: 5px;
-  }
-  .action-card span {
-    display: block;
-    font-size: 12px;
-    color: var(--muted);
-    line-height: 1.45;
-  }
   .diag-banner {
     display: none;
-    margin: 0 0 14px;
-    padding: 12px 14px;
+    margin: 0 0 12px;
+    padding: 10px 12px;
     border-radius: 18px;
     border: 1px solid rgba(242, 213, 141, 0.24);
     background: rgba(59, 44, 14, 0.55);
@@ -1590,13 +1563,6 @@ function renderDashboardHTML(appName, payloadJson) {
     flex-wrap: wrap;
     gap: 8px;
     padding: 0 10px 10px;
-  }
-  .schedule-panel {
-    margin-top: 14px;
-    background: var(--panel);
-    border: 1px solid var(--panel-border);
-    border-radius: 18px;
-    padding: 14px;
   }
   .schedule-list {
     display: grid;
@@ -1649,7 +1615,7 @@ function renderDashboardHTML(appName, payloadJson) {
     display: grid;
     grid-template-columns: repeat(2,minmax(0,1fr));
     gap: 10px;
-    margin: 10px 0 14px;
+    margin: 8px 0 14px;
   }
   .section-title {
     margin: 16px 0 8px;
@@ -1703,17 +1669,20 @@ function renderDashboardHTML(appName, payloadJson) {
   .badge.good { color: var(--good); }
   .badge.rough { color: var(--rough); }
   .badge.low { color: var(--low); }
-  .quick-actions {
-    display: flex;
-    flex-wrap: wrap;
+  .graph-controls {
+    display: grid;
     gap: 8px;
-    margin: 10px 0 12px;
+    margin: 10px 0 14px;
   }
   .toolbar {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin: 8px 0 10px;
+    margin: 0;
+  }
+  .toolbar.secondary {
+    justify-content: space-between;
+    align-items: center;
   }
   .pill, select {
     background: rgba(255,255,255,0.06);
@@ -1734,8 +1703,11 @@ function renderDashboardHTML(appName, payloadJson) {
     text-decoration: none;
     display: inline-block;
   }
+  .focus-select {
+    min-width: 180px;
+  }
   .advanced-panel {
-    margin: 0 0 12px;
+    margin: 0;
     border: 1px solid rgba(255,255,255,0.10);
     border-radius: 16px;
     background: rgba(255,255,255,0.025);
@@ -1783,47 +1755,73 @@ function renderDashboardHTML(appName, payloadJson) {
     display: flex;
     justify-content: flex-end;
   }
-  .entry-panels {
+  .action-rail {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-    margin-bottom: 12px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+    margin: 0 0 10px;
+  }
+  .action-rail button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 46px;
+    padding: 10px 12px;
+    border-radius: 16px;
+    text-align: center;
+    font-weight: 650;
+  }
+  .action-symbol {
+    font-size: 15px;
+    line-height: 1;
+  }
+  .workspace-shell {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 20px;
+    padding: 12px;
+    min-height: 72px;
+  }
+  .workspace-empty {
+    color: var(--muted);
+    font-size: 12px;
+    padding: 6px 2px;
+  }
+  .workspace-panel {
+    display: none;
+  }
+  .workspace-panel.active {
+    display: block;
+  }
+  .workspace-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .workspace-head h2 {
+    margin: 0;
+    font-size: 15px;
+  }
+  .workspace-copy {
+    color: var(--muted);
+    font-size: 12px;
+    margin: 0 0 10px;
+  }
+  .workspace-dismiss {
+    min-width: 0;
   }
   .entry-card.primary {
     border-color: rgba(117, 197, 255, 0.24);
     box-shadow: 0 12px 26px rgba(2, 13, 24, 0.22);
   }
   .entry-card {
-    background: var(--panel);
+    background: rgba(255,255,255,0.03);
     border: 1px solid var(--panel-border);
     border-radius: 18px;
     overflow: hidden;
-  }
-  .entry-card summary {
-    cursor: pointer;
-    padding: 10px 12px;
-    font-size: 13px;
-    color: #d9e7ff;
-    user-select: none;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-    background: rgba(255,255,255,0.03);
-    list-style: none;
-  }
-  .entry-card summary::-webkit-details-marker {
-    display: none;
-  }
-  .entry-card summary::before {
-    content: '▶';
-    margin-right: 8px;
-    font-size: 10px;
-    color: #9fb1cc;
-  }
-  .entry-card[open] summary::before {
-    content: '▼';
-  }
-  .entry-card[open] summary {
-    background: rgba(255,255,255,0.08);
-    border-bottom: 1px solid rgba(255,255,255,0.12);
   }
   .entry-card form {
     display: grid;
@@ -1873,9 +1871,10 @@ function renderDashboardHTML(appName, payloadJson) {
   .entry-card .entry-note {
     padding: 0 10px 10px;
   }
-  .history-panel {
-    background: var(--panel);
-    border: 1px solid var(--panel-border);
+  .history-panel,
+  .schedule-panel {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
     border-radius: 18px;
     padding: 14px;
   }
@@ -2021,6 +2020,10 @@ function renderDashboardHTML(appName, payloadJson) {
     gap: 8px;
     border: 1px solid rgba(255,255,255,0.08);
   }
+  .legend label.active {
+    border-color: rgba(117, 197, 255, 0.32);
+    background: rgba(117, 197, 255, 0.12);
+  }
   .footer {
     margin-top: 12px;
     color: #89a0c2;
@@ -2028,17 +2031,18 @@ function renderDashboardHTML(appName, payloadJson) {
   }
   @media (max-width: 980px) {
     .overview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .action-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .entry-panels { grid-template-columns: 1fr; }
+    .action-rail { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   }
   @media (max-width: 700px) {
     .hero { padding: 16px; }
     .hero-top { flex-direction: column; }
     .cards { grid-template-columns: 1fr; }
     .overview-grid { grid-template-columns: 1fr; }
-    .action-grid { grid-template-columns: 1fr; }
+    .action-rail { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .advanced-grid { grid-template-columns: 1fr; }
     .entry-row { grid-template-columns: 1fr; }
+    .toolbar.secondary { align-items: stretch; }
+    .focus-select { width: 100%; }
   }
 </style>
 </head>
@@ -2047,9 +2051,9 @@ function renderDashboardHTML(appName, payloadJson) {
     <section class="hero">
       <div class="hero-top">
         <div>
-          <div class="hero-kicker">Daily Tracker</div>
+          <div class="hero-kicker">Current State</div>
           <h1>${escapeHtml(appName)}</h1>
-          <div class="muted">Schema v<span id="schema"></span> • history from logged injections • forecast from enabled schedule entries.</div>
+          <div class="muted">Schema v<span id="schema"></span> • live estimate from logs and enabled schedules.</div>
         </div>
         <div id="hero-status" class="hero-status"></div>
       </div>
@@ -2058,76 +2062,7 @@ function renderDashboardHTML(appName, payloadJson) {
 
     <div id="diagnostics-banner" class="diag-banner"></div>
 
-    <div class="action-grid">
-      <button class="action-card" type="button" onclick="focusEntry('log')">
-        <strong>Quick Log</strong>
-        <span>Open the injection form with your last-used compound preselected.</span>
-      </button>
-      <button class="action-card" type="button" onclick="focusEntry('schedule')">
-        <strong>Add Schedule</strong>
-        <span>Create a future repeating dose without leaving the dashboard.</span>
-      </button>
-      <button class="action-card" type="button" onclick="scrollToSection('chart-section')">
-        <strong>Review Trend</strong>
-        <span>Jump to the graph and compare amount versus concentration.</span>
-      </button>
-      <button class="action-card" type="button" onclick="scrollToSection('history-section')">
-        <strong>Recent History</strong>
-        <span>Inspect, edit, or delete your latest injections quickly.</span>
-      </button>
-      <button class="action-card" type="button" onclick="exportBackup()">
-        <strong>Export Backup</strong>
-        <span>Write a portable backup file for safekeeping or manual export.</span>
-      </button>
-    </div>
-
     <div id="empty" class="empty" style="display:none">No logs yet. Use Quick Log to create your first entry.</div>
-
-    <div class="section-title">Quick Actions</div>
-    <div class="entry-panels">
-      <details id="entry-log" class="entry-card primary" open>
-        <summary>Quick Log Injection</summary>
-        <form onsubmit="submitLog(event)">
-          <select id="log-compound" required></select>
-          <div id="recent-compounds" class="recent-compounds"></div>
-          <div class="entry-row">
-            <input id="log-dose" type="number" min="0" step="0.01" placeholder="Dose mg" required>
-            <input id="log-date" type="date" required>
-          </div>
-          <input id="log-time" type="time" required>
-          <textarea id="log-notes" placeholder="Optional notes"></textarea>
-          <div class="entry-actions">
-            <button id="log-submit" class="pill" type="submit">Save Injection</button>
-            <button id="log-cancel-edit" class="pill" type="button" onclick="cancelLogEdit()" style="display:none">Cancel Edit</button>
-          </div>
-        </form>
-        <div id="log-status" class="entry-status"></div>
-        <div class="entry-note">Saves to history and reopens the updated dashboard automatically.</div>
-      </details>
-
-      <details id="entry-schedule" class="entry-card">
-        <summary>Add Schedule</summary>
-        <form onsubmit="submitSchedule(event)">
-          <select id="schedule-compound" required></select>
-          <div class="entry-row">
-            <input id="schedule-dose" type="number" min="0" step="0.01" placeholder="Dose mg" required>
-            <input id="schedule-every" type="number" min="0.25" step="0.25" placeholder="Every days" value="7" required>
-          </div>
-          <div class="entry-row">
-            <input id="schedule-start-date" type="date" required>
-            <input id="schedule-start-time" type="time" required>
-          </div>
-          <input id="schedule-occurrences" type="number" min="1" step="1" placeholder="Occurrences (optional)">
-          <textarea id="schedule-notes" placeholder="Optional notes"></textarea>
-          <div class="entry-actions">
-            <button class="pill" type="submit">Save Schedule</button>
-            <button id="schedule-cancel-edit" class="pill" type="button" onclick="cancelProtocolEdit()" style="display:none">Cancel Edit</button>
-          </div>
-        </form>
-        <div id="schedule-status" class="entry-status"></div>
-        <div class="entry-note">Use schedules for forecasted doses that should appear in the graph and summary cards.</div>
-      </details>
-    </div>
 
     <div class="section-title">Current Status</div>
     <div class="cards" id="cards"></div>
@@ -2140,66 +2075,150 @@ function renderDashboardHTML(appName, payloadJson) {
       <div class="legend" id="legend"></div>
     </div>
 
-    <div class="toolbar">
-      <button id="window-1" class="pill" onclick="setWindow(1)">1d</button>
-      <button id="window-7" class="pill" onclick="setWindow(7)">7d</button>
-      <button id="window-30" class="pill" onclick="setWindow(30)">30d</button>
-      <button id="window-90" class="pill" onclick="setWindow(90)">90d</button>
-      <input id="custom-days" type="number" min="1" max="365" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="Custom days" style="width:120px" />
-      <button id="refresh-dashboard" class="pill" type="button" onclick="refreshDashboard()">Refresh</button>
-      <button id="mode-amount" class="pill" onclick="setMode('amount')">Amount</button>
-      <button id="mode-concentration" class="pill" onclick="setMode('concentration')">Concentration</button>
+    <div class="graph-controls">
+      <div class="toolbar">
+        <button id="window-1" class="pill" onclick="setWindow(1)">1d</button>
+        <button id="window-7" class="pill" onclick="setWindow(7)">7d</button>
+        <button id="window-30" class="pill" onclick="setWindow(30)">30d</button>
+        <button id="window-90" class="pill" onclick="setWindow(90)">90d</button>
+        <input id="custom-days" type="number" min="1" max="365" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="Custom days" style="width:120px" />
+        <button id="mode-amount" class="pill" onclick="setMode('amount')">Amount</button>
+        <button id="mode-concentration" class="pill" onclick="setMode('concentration')">Concentration</button>
+      </div>
+
+      <div class="toolbar secondary">
+        <select id="focus-compound" class="focus-select" onchange="setFocusCompound(this.value)">
+          <option value="">All compounds</option>
+        </select>
+        <button id="refresh-dashboard" class="pill" type="button" onclick="refreshDashboard()">Refresh</button>
+      </div>
+
+      <details class="advanced-panel">
+        <summary>Advanced Controls <span id="advanced-summary" class="advanced-summary">All data</span></summary>
+        <div class="advanced-grid">
+          <select id="routeFilter" onchange="setRouteFilter(this.value)">
+            <option value="all">All routes</option>
+          </select>
+          <select id="qualityFilter" onchange="setQualityFilter(this.value)">
+            <option value="all">All confidence</option>
+            <option value="good">Higher confidence</option>
+            <option value="rough">Exploratory</option>
+            <option value="low">Low confidence</option>
+          </select>
+          <select id="categoryFilter" onchange="setCategoryFilter(this.value)">
+            <option value="all">All categories</option>
+          </select>
+          <select id="chartDetail" onchange="setChartDetail(this.value)">
+            <option value="markers">Events</option>
+            <option value="minimal">Minimal</option>
+            <option value="insight">Events + Total</option>
+            <option value="full">Full</option>
+          </select>
+        </div>
+        <div class="advanced-actions">
+          <button class="pill" type="button" onclick="resetAdvancedControls()">Reset filters</button>
+        </div>
+      </details>
     </div>
 
-    <details class="advanced-panel">
-      <summary>Advanced Controls <span id="advanced-summary" class="advanced-summary">All data</span></summary>
-      <div class="advanced-grid">
-        <select id="routeFilter" onchange="setRouteFilter(this.value)">
-          <option value="all">All routes</option>
-        </select>
-        <select id="qualityFilter" onchange="setQualityFilter(this.value)">
-          <option value="all">All confidence</option>
-          <option value="good">Higher confidence</option>
-          <option value="rough">Exploratory</option>
-          <option value="low">Low confidence</option>
-        </select>
-        <select id="categoryFilter" onchange="setCategoryFilter(this.value)">
-          <option value="all">All categories</option>
-        </select>
-        <select id="chartDetail" onchange="setChartDetail(this.value)">
-          <option value="markers">Events</option>
-          <option value="minimal">Minimal</option>
-          <option value="insight">Events + Total</option>
-          <option value="full">Full</option>
-        </select>
-      </div>
-      <div class="advanced-actions">
-        <button class="pill" type="button" onclick="resetAdvancedControls()">Reset filters</button>
-      </div>
-    </details>
+    <div class="section-title">Actions</div>
+    <div class="action-rail">
+      <button id="action-log" class="pill" type="button" onclick="togglePanel('log', true)"><span class="action-symbol">+</span>Quick Log</button>
+      <button id="action-schedule" class="pill" type="button" onclick="togglePanel('schedule', true)"><span class="action-symbol">~</span>Add Schedule</button>
+      <button id="action-history" class="pill" type="button" onclick="togglePanel('history', true)"><span class="action-symbol">#</span>History</button>
+      <button id="action-protocols" class="pill" type="button" onclick="togglePanel('protocols', true)"><span class="action-symbol">@</span>Schedules</button>
+      <button id="action-export" class="pill" type="button" onclick="exportBackup()"><span class="action-symbol">^</span>Export</button>
+    </div>
 
-    <div id="history-section" class="section-title">Past Injections</div>
-    <section class="history-panel">
-      <div class="history-head">
-        <h2>Past Injections</h2>
-        <div class="history-ranges">
-          <button class="pill" id="history-7" type="button" onclick="setHistoryRange(7)">7d</button>
-          <button class="pill" id="history-30" type="button" onclick="setHistoryRange(30)">30d</button>
-          <button class="pill" id="history-90" type="button" onclick="setHistoryRange(90)">90d</button>
-          <button class="pill" id="history-all" type="button" onclick="setHistoryRange(0)">All</button>
+    <section id="workspace-shell" class="workspace-shell">
+      <div id="workspace-empty" class="workspace-empty">Choose an action to open logging, schedules, or history management.</div>
+
+      <div id="panel-log" class="workspace-panel">
+        <div class="workspace-head">
+          <h2>Quick Log</h2>
+          <button class="pill workspace-dismiss" type="button" onclick="setActivePanel('', false)">Hide</button>
+        </div>
+        <div class="workspace-copy">Save a new injection and return to the updated dashboard state.</div>
+        <div id="entry-log" class="entry-card primary">
+          <form onsubmit="submitLog(event)">
+            <select id="log-compound" required></select>
+            <div id="recent-compounds" class="recent-compounds"></div>
+            <div class="entry-row">
+              <input id="log-dose" type="number" min="0" step="0.01" placeholder="Dose mg" required>
+              <input id="log-date" type="date" required>
+            </div>
+            <input id="log-time" type="time" required>
+            <textarea id="log-notes" placeholder="Optional notes"></textarea>
+            <div class="entry-actions">
+              <button id="log-submit" class="pill" type="submit">Save Injection</button>
+              <button id="log-cancel-edit" class="pill" type="button" onclick="cancelLogEdit()" style="display:none">Cancel Edit</button>
+            </div>
+          </form>
+          <div id="log-status" class="entry-status"></div>
         </div>
       </div>
-      <div id="history-meta" class="history-meta"></div>
-      <div id="history-list" class="history-list"></div>
-      <div class="history-more">
-        <button id="history-more" class="pill" type="button" onclick="loadMoreHistory()" style="display:none">Load more</button>
-      </div>
-    </section>
 
-    <div class="section-title">Schedules</div>
-    <section class="schedule-panel">
-      <div id="schedule-meta" class="history-meta"></div>
-      <div id="schedule-list" class="schedule-list"></div>
+      <div id="panel-schedule" class="workspace-panel">
+        <div class="workspace-head">
+          <h2>Schedule</h2>
+          <button class="pill workspace-dismiss" type="button" onclick="setActivePanel('', false)">Hide</button>
+        </div>
+        <div class="workspace-copy">Project upcoming doses without leaving the dashboard.</div>
+        <div id="entry-schedule" class="entry-card">
+          <form onsubmit="submitSchedule(event)">
+            <select id="schedule-compound" required></select>
+            <div class="entry-row">
+              <input id="schedule-dose" type="number" min="0" step="0.01" placeholder="Dose mg" required>
+              <input id="schedule-every" type="number" min="0.25" step="0.25" placeholder="Every days" value="7" required>
+            </div>
+            <div class="entry-row">
+              <input id="schedule-start-date" type="date" required>
+              <input id="schedule-start-time" type="time" required>
+            </div>
+            <input id="schedule-occurrences" type="number" min="1" step="1" placeholder="Occurrences (optional)">
+            <textarea id="schedule-notes" placeholder="Optional notes"></textarea>
+            <div class="entry-actions">
+              <button class="pill" type="submit">Save Schedule</button>
+              <button id="schedule-cancel-edit" class="pill" type="button" onclick="cancelProtocolEdit()" style="display:none">Cancel Edit</button>
+            </div>
+          </form>
+          <div id="schedule-status" class="entry-status"></div>
+        </div>
+      </div>
+
+      <div id="panel-history" class="workspace-panel">
+        <div class="workspace-head">
+          <h2>Past Injections</h2>
+          <button class="pill workspace-dismiss" type="button" onclick="setActivePanel('', false)">Hide</button>
+        </div>
+        <section class="history-panel">
+          <div class="history-head">
+            <h2>Past Injections</h2>
+            <div class="history-ranges">
+              <button class="pill" id="history-7" type="button" onclick="setHistoryRange(7)">7d</button>
+              <button class="pill" id="history-30" type="button" onclick="setHistoryRange(30)">30d</button>
+              <button class="pill" id="history-90" type="button" onclick="setHistoryRange(90)">90d</button>
+              <button class="pill" id="history-all" type="button" onclick="setHistoryRange(0)">All</button>
+            </div>
+          </div>
+          <div id="history-meta" class="history-meta"></div>
+          <div id="history-list" class="history-list"></div>
+          <div class="history-more">
+            <button id="history-more" class="pill" type="button" onclick="loadMoreHistory()" style="display:none">Load more</button>
+          </div>
+        </section>
+      </div>
+
+      <div id="panel-protocols" class="workspace-panel">
+        <div class="workspace-head">
+          <h2>Schedules</h2>
+          <button class="pill workspace-dismiss" type="button" onclick="setActivePanel('', false)">Hide</button>
+        </div>
+        <section class="schedule-panel">
+          <div id="schedule-meta" class="history-meta"></div>
+          <div id="schedule-list" class="schedule-list"></div>
+        </section>
+      </div>
     </section>
 
     <div class="footer">Convenience visualization only. Values are model estimates and can be low-confidence for some compounds.</div>
@@ -2234,6 +2253,7 @@ function renderDashboardHTML(appName, payloadJson) {
     editProtocolId: null,
     preferredCompound: null,
     focusCompound: null,
+    activePanel: Array.isArray(payload.rows) && payload.rows.length ? '' : 'log',
     toastTimer: null
   };
   const HISTORY_PAGE_SIZE = 15;
@@ -2281,6 +2301,22 @@ function renderDashboardHTML(appName, payloadJson) {
     }
   }
 
+  function fillFocusCompoundSelect() {
+    const select = document.getElementById('focus-compound');
+    if (!select) return;
+    const compounds = payload.compounds.slice().sort(function(a, b) {
+      return String(a.display_name || a.name).localeCompare(String(b.display_name || b.name));
+    });
+    select.innerHTML = '<option value="">All compounds</option>';
+    compounds.forEach(function(c) {
+      const opt = document.createElement('option');
+      opt.value = c.name;
+      opt.textContent = c.display_name || c.name;
+      select.appendChild(opt);
+    });
+    select.value = state.focusCompound || '';
+  }
+
   function setDefaultDateTimeInputs() {
     const now = new Date();
     const yyyy = now.getFullYear();
@@ -2302,6 +2338,7 @@ function renderDashboardHTML(appName, payloadJson) {
   }
   fillCompoundSelect('log-compound');
   fillCompoundSelect('schedule-compound');
+  fillFocusCompoundSelect();
   setDefaultDateTimeInputs();
   renderRecentCompounds();
   renderDiagnostics();
@@ -2381,24 +2418,19 @@ function renderDashboardHTML(appName, payloadJson) {
       .sort(function(a, b) { return a - b })[0] || null;
     const items = [
       {
-        label: 'Visible compounds',
+        label: 'Live compounds',
         value: String(filtered.length),
-        note: filtered.length ? 'Filtered current cards' : 'No matching compounds'
+        note: filtered.length ? 'Matching current filters' : 'No matching compounds'
       },
       {
-        label: 'Logs this week',
+        label: 'Next dose',
+        value: nextDose ? relativeFromNow(nextDose.toISOString()) : 'None',
+        note: nextDose ? nextDose.toLocaleString() : 'No enabled schedules'
+      },
+      {
+        label: 'Logs 7d',
         value: String(payload.overview.recent_injection_count || 0),
-        note: 'Across all categories'
-      },
-      {
-        label: 'Schedules',
-        value: String(payload.overview.enabled_schedule_count || 0),
-        note: nextDose ? ('Next ' + relativeFromNow(nextDose.toISOString())) : 'No enabled schedules'
-      },
-      {
-        label: state.mode === 'concentration' ? 'Chart mode' : 'Display mode',
-        value: state.mode === 'concentration' ? 'mg/L' : 'mg',
-        note: state.chartDetail === 'full' ? 'Full trend detail' : 'Fast daily view'
+        note: String(payload.overview.enabled_schedule_count || 0) + ' active schedules'
       }
     ];
 
@@ -2413,7 +2445,12 @@ function renderDashboardHTML(appName, payloadJson) {
     if (!status) return;
     const activeFilters = activeFilterDescriptions();
     const nextText = nextDose ? ('Next scheduled dose ' + relativeFromNow(nextDose.toISOString())) : 'No scheduled dose upcoming';
-    status.textContent = activeFilters.length ? (activeFilters.join(' • ') + ' • ' + nextText) : nextText;
+    const focusMeta = state.focusCompound
+      ? (payload.compounds.find(function(item) { return item.name === state.focusCompound; }) || {}).display_name || state.focusCompound
+      : 'All compounds';
+    const statusItems = ['Focus: ' + focusMeta].concat(activeFilters);
+    statusItems.push(nextText);
+    status.textContent = statusItems.join(' • ');
   }
 
   function renderDiagnostics() {
@@ -2488,10 +2525,45 @@ function renderDashboardHTML(appName, payloadJson) {
           select.value = name;
           state.preferredCompound = name;
           saveUiPrefs();
+          setActivePanel('log', false);
           showToast('Quick Log set to ' + button.textContent + '.');
         }
       });
     });
+  }
+
+  function updateWorkspaceVisibility() {
+    const active = state.activePanel || '';
+    const empty = document.getElementById('workspace-empty');
+    if (empty) empty.style.display = active ? 'none' : 'block';
+
+    ['log', 'schedule', 'history', 'protocols'].forEach(function(name) {
+      const panel = document.getElementById('panel-' + name);
+      if (panel) panel.classList.toggle('active', active === name);
+      const action = document.getElementById('action-' + name);
+      if (action) action.classList.toggle('active', active === name);
+    });
+  }
+
+  function setActivePanel(name, shouldScroll) {
+    state.activePanel = String(name || '').trim();
+    updateWorkspaceVisibility();
+    if (!state.activePanel) return;
+    if (shouldScroll) {
+      const shell = document.getElementById('workspace-shell');
+      if (shell) shell.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    const firstField = document.querySelector('#panel-' + state.activePanel + ' input, #panel-' + state.activePanel + ' select, #panel-' + state.activePanel + ' textarea, #panel-' + state.activePanel + ' button');
+    if (firstField && typeof firstField.focus === 'function') firstField.focus();
+  }
+
+  function togglePanel(name, shouldScroll) {
+    const normalized = String(name || '').trim();
+    if (state.activePanel === normalized) {
+      setActivePanel('', false);
+      return;
+    }
+    setActivePanel(normalized, shouldScroll);
   }
 
   function formatProtocolRule(item) {
@@ -2529,13 +2601,14 @@ function renderDashboardHTML(appName, payloadJson) {
     setProtocolEditState(id);
     state.preferredCompound = entry.compound || state.preferredCompound;
     saveUiPrefs();
-    focusEntry('schedule');
+    setActivePanel('schedule', true);
     setFormStatus('schedule-status', 'Editing schedule. Save to update it.');
   }
 
   function cancelProtocolEdit() {
     setProtocolEditState(null);
     setFormStatus('schedule-status', 'Schedule edit cancelled.');
+    setActivePanel('schedule', false);
   }
 
   function toggleProtocol(protocolId, enabled) {
@@ -2579,7 +2652,7 @@ function renderDashboardHTML(appName, payloadJson) {
 
     meta.textContent = items.length ? ('Showing ' + items.length + ' schedules') : 'No schedules for current filters';
     if (!items.length) {
-      list.innerHTML = '<div class="entry-note">No schedules yet. Add one above to project upcoming doses.</div>';
+      list.innerHTML = '<div class="entry-note">No schedules yet. Open Add Schedule to project upcoming doses.</div>';
       return;
     }
 
@@ -2664,6 +2737,8 @@ function renderDashboardHTML(appName, payloadJson) {
     if (state.focusCompound && !state.enabled.includes(state.focusCompound)) {
       state.enabled.push(state.focusCompound);
     }
+    const focusSelect = document.getElementById('focus-compound');
+    if (focusSelect) focusSelect.value = state.focusCompound || '';
     saveUiPrefs();
     draw(false);
     showToast(state.focusCompound ? 'Focused chart on selected compound.' : 'Cleared chart focus.');
@@ -2854,7 +2929,13 @@ function renderDashboardHTML(appName, payloadJson) {
     const custom = document.getElementById('custom-days');
     if (custom) custom.value = String(state.days);
 
+    const focusSelect = document.getElementById('focus-compound');
+    if (focusSelect && focusSelect.value !== (state.focusCompound || '')) {
+      focusSelect.value = state.focusCompound || '';
+    }
+
     renderOverview();
+    updateWorkspaceVisibility();
   }
 
   function activeFilterDescriptions() {
@@ -2924,21 +3005,6 @@ function renderDashboardHTML(appName, payloadJson) {
     }
   }
 
-  function focusEntry(kind) {
-    const target = kind === 'schedule' ? document.getElementById('entry-schedule') : document.getElementById('entry-log');
-    if (!target) return;
-    target.open = true;
-    const firstField = target.querySelector('input, select, textarea');
-    if (firstField) firstField.focus();
-    target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
-
-  function scrollToSection(id) {
-    const target = document.getElementById(id);
-    if (!target) return;
-    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-
   function setFormStatus(id, message) {
     const el = document.getElementById(id);
     if (el) el.textContent = message;
@@ -2967,6 +3033,7 @@ function renderDashboardHTML(appName, payloadJson) {
       const compound = document.getElementById('log-compound');
       if (compound) compound.value = state.preferredCompound;
     }
+    setActivePanel('log', false);
   }
 
   function startEditInjection(injectionId) {
@@ -3007,7 +3074,7 @@ function renderDashboardHTML(appName, payloadJson) {
 
     state.preferredCompound = entry.compound || state.preferredCompound;
     setLogEditState(id);
-    focusEntry('log');
+    setActivePanel('log', true);
     setFormStatus('log-status', 'Editing past injection. Save Changes to update it.');
   }
 

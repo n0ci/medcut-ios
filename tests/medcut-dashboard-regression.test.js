@@ -247,8 +247,8 @@ test('entry form controls are responsive and can shrink without overflow', () =>
 
   assert.match(
     source,
-    /@media \(max-width: 980px\) \{[\s\S]*?\.entry-panels \{ grid-template-columns: 1fr; \}/,
-    'Expected entry panels to stack at medium widths to preserve usable form field widths.'
+    /@media \(max-width: 980px\) \{[\s\S]*?\.action-rail \{ grid-template-columns: repeat\(3, minmax\(0, 1fr\)\); \}/,
+    'Expected the compact action rail to reflow at medium widths.'
   );
 });
 
@@ -286,33 +286,67 @@ test('dashboard includes past injections history panel', () => {
   );
 });
 
-test('dashboard prioritizes quick actions before status, graph, and history', () => {
-  const quickIdx = source.indexOf('<div class="section-title">Quick Actions</div>');
+test('dashboard prioritizes status and graph before actions', () => {
   const cardsIdx = source.indexOf('<div class="section-title">Current Status</div>');
   const graphIdx = source.indexOf('<div id="chart-section" class="section-title">Trend Graph</div>');
-  const historyIdx = source.indexOf('<div id="history-section" class="section-title">Past Injections</div>');
+  const actionIdx = source.indexOf('<div class="section-title">Actions</div>');
 
-  assert.ok(quickIdx !== -1 && cardsIdx !== -1 && graphIdx !== -1 && historyIdx !== -1, 'Expected the task-first dashboard sections to exist.');
-  assert.ok(quickIdx < cardsIdx, 'Quick actions should appear before current status cards.');
+  assert.ok(cardsIdx !== -1 && graphIdx !== -1 && actionIdx !== -1, 'Expected status, graph, and actions sections to exist.');
   assert.ok(cardsIdx < graphIdx, 'Current status should appear before the trend graph.');
-  assert.ok(graphIdx < historyIdx, 'Trend graph should appear before past injections.');
+  assert.ok(graphIdx < actionIdx, 'Trend graph should appear before the action workspace.');
 });
 
-test('graph controls remain below chart and quick log is expanded by default', () => {
+test('graph controls remain below chart and actions open a management workspace', () => {
   const chartIdx = source.indexOf('<div class="chart-wrap">');
-  const toolbarIdx = source.indexOf('<div class="toolbar">');
+  const toolbarIdx = source.indexOf('<div class="graph-controls">');
   assert.ok(chartIdx !== -1 && toolbarIdx !== -1 && chartIdx < toolbarIdx, 'Expected graph controls below chart container.');
 
   assert.match(
     source,
-    /<details id="entry-log" class="entry-card primary" open>/,
-    'Expected quick log form to be open by default for faster daily entry.'
+    /id="focus-compound" class="focus-select" onchange="setFocusCompound\(this\.value\)"/,
+    'Expected a visible focus-compound control near the graph.'
   );
 
   assert.match(
     source,
-    /<details id="entry-schedule" class="entry-card">/,
-    'Expected schedule form to remain a collapsible details panel.'
+    /class="action-rail"/,
+    'Expected a compact action rail below the graph.'
+  );
+
+  assert.match(
+    source,
+    /id="workspace-shell" class="workspace-shell"/,
+    'Expected a shared management workspace container.'
+  );
+
+  assert.match(
+    source,
+    /function updateWorkspaceVisibility\(\)/,
+    'Expected panel visibility to be coordinated through a single workspace function.'
+  );
+
+  assert.match(
+    source,
+    /function togglePanel\(name, shouldScroll\)/,
+    'Expected action buttons to toggle one management panel at a time.'
+  );
+
+  assert.match(
+    source,
+    /id="workspace-empty" class="workspace-empty"/,
+    'Expected an empty workspace hint instead of always-open forms.'
+  );
+
+  assert.match(
+    source,
+    /id="panel-log" class="workspace-panel"/,
+    'Expected Quick Log to live inside the shared workspace.'
+  );
+
+  assert.match(
+    source,
+    /id="panel-history" class="workspace-panel"/,
+    'Expected history management to live inside the shared workspace.'
   );
 
   assert.match(
@@ -337,12 +371,6 @@ test('graph controls remain below chart and quick log is expanded by default', (
     source,
     /id="refresh-dashboard" class="pill" type="button" onclick="refreshDashboard\(\)"/,
     'Expected explicit dashboard refresh control in graph toolbar.'
-  );
-
-  assert.match(
-    source,
-    /class="action-grid"/,
-    'Expected top-level action cards for faster dashboard navigation.'
   );
 });
 
